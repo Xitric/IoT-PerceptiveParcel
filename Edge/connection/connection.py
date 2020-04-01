@@ -55,25 +55,13 @@ class Connection:
             try:
                 self._send(topic, payload)
                 successful = True
-                print("Success! OH!")
             except ConnectionLostError:
-                print("Lost connection")
                 self.connect()
             except ServiceUnreachableError:
                 try:
-                    print("Handling failed send")
                     self.__retry_connect_service()
                 except ConnectionLostError:
                     self.connect()
-
-            # except ConnectionError as connErr:
-            #     print("WTH?!")
-            #     if connErr is ConnectionLostError:
-                    
-            #     elif connErr is ServiceUnreachableError:
-                    
-            #     else:
-            #         print(str(type(connErr)))
 
     def _send(self, topic: str, payload: bytes):
         pass

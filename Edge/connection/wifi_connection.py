@@ -51,7 +51,7 @@ class WifiConnection(Connection):
                 print("Lost network")
                 raise ConnectionLostError
             elif osErr.args[0] in [EHOSTUNREACH, ECONNRESET]:
-                print("Couldn't connect to service " + str(osErr.args[0]))
+                print("Couldn't connect to service")
                 utime.sleep(1)
                 raise ServiceUnreachableError
             raise  # Rethrow
@@ -67,7 +67,9 @@ class WifiConnection(Connection):
 
     def _send(self, topic: str, payload: bytes):
         try:
-            self.connection.sendall("Hello, world!".encode("utf-8"))
+            self.connection.sendall("{}: ".format(topic)
+                                        .encode("utf-8")
+                                        + payload)
         except OSError as osErr:
             if osErr.args[0] in [EHOSTUNREACH, ECONNRESET]:
                 print("Lost connection to host")
