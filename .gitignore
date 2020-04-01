@@ -3,3 +3,4 @@
 .vscode/
 .espconfig.json
 *.pyi
+__pycache__
