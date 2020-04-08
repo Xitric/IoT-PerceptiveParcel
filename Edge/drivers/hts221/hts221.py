@@ -19,7 +19,7 @@ The file has also been modified to follow python standards in regards to
 comments, method naming, etc. Non-english comments were also removed.
 """
 
-from .usmbus import SMBus
+from usmbus import SMBus
 
 # I2C Slave Address
 SLAVE_ADDRESS = 0x5F
