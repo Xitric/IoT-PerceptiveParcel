@@ -32,6 +32,13 @@ class RssiTable:
         sorted_scans = sorted(scans, key=self.signal_strength, reverse=True)
         return sorted_scans[:limit]
     
+    def contains_any(self, stations) -> bool:
+        for ssid in self.table:
+            if ssid in stations:
+                return True
+        
+        return False
+    
     @staticmethod
     def signal_strength(scan):
         return scan[1]
@@ -49,6 +56,8 @@ class Triangulation:
         self.table = RssiTable()
         self.wifi = wifi
         self.mqtt = mqtt
+
+        self.previous_snapshot = []
     
     def start(self):
         self.thread.start()
@@ -63,9 +72,11 @@ class Triangulation:
                 self.table.add(ubinascii.hexlify(station[1]), station[3])
             self.table.clean_table()
 
-            self.send_location_fix(self.table.snapshot(3))
-            self.wifi.disconnect()
-            utime.sleep(10)
+            if not self.table.contains_any([ssid for ssid, _, _ in self.previous_snapshot]):
+                self.previous_snapshot = self.table.snapshot(3)
+                self.send_location_fix(self.previous_snapshot)
+                self.wifi.disconnect()
+            utime.sleep(10)  # TODO: Increase to 60 secs
 
     def send_location_fix(self, stations):
         payload = ujson.dumps(stations)
