@@ -37,18 +37,15 @@ class LocationTriangulation():
 
     def __init__(self, wifi: Wifi, mqtt: MqttConnection):
         self.thread = Thread(self.run, "ThreadLocation")
-        # self.thread.start()
+        self.thread.start()
 
         self.table = RssiTable()
         self.wifi = wifi
         self.mqtt = mqtt
 
     def run(self, thread: Thread):
-        print("Connecting to mqtt")
-        self.mqtt.connect()
-        # while thread.active:
-        while True:
-            print("Disconnecting to scan networks")
+        print(thread.active)
+        while thread.active:
             self.wifi.disconnect()
             stations = self.wifi.scan()
             print("Got {}".format(stations))
@@ -58,26 +55,9 @@ class LocationTriangulation():
             self.table.clean_table()
 
             self.send_location_fix(self.table.snapshot(3))
+            self.wifi.disconnect()
             utime.sleep(10)
-            # payload = ujson.dumps(self.table.snapshot(2))
-            # print(self.table.snapshot(3))
-            # print("Trying to send message")
-            # self.mqtt.publish(b'hcklI67o/package/123/maclocation', payload.encode("utf-8"))
 
     def send_location_fix(self, stations):
         payload = ujson.dumps(stations)
-        if self.wifi.try_connect():
-            if 'location-fixes.txt' in os.listdir(''):
-                with open('location-fixes.txt', 'r') as buffer:
-                    for line in buffer:
-                        print("Sending {}".format(line))
-                        self.mqtt.publish(b'hcklI67o/package/123/maclocation', line.encode("utf-8"))
-                        buffer_empty = False
-                os.remove('location-fixes.txt')
-
-            print("Sending {}".format(payload))
-            self.mqtt.publish(b'hcklI67o/package/123/maclocation', payload.encode("utf-8"))
-        else:
-            with open('location-fixes.txt', 'a') as buffer:
-                print("Buffering {}".format(payload))
-                buffer.write('{}\n'.format(payload))
+        self.mqtt.publish(b'hcklI67o/package/123/maclocation', payload.encode("utf-8"))

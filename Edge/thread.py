@@ -1,4 +1,5 @@
 import _thread
+import sys
 try:
     import utime
 except ModuleNotFoundError:
@@ -37,6 +38,8 @@ class Thread:
             self.__run(self)
         except (KeyboardInterrupt, SystemExit):
             pass
+        except BaseException as e:
+            sys.print_exception(e)
         finally:
             print("Stopped " + str(self.name))
             self.active = False
@@ -60,6 +63,8 @@ def join(threads: [Thread]):
     except (KeyboardInterrupt, SystemExit):
         for thread in threads:
             thread.interrupt()
+    except BaseException as e:
+        sys.print_exception(e)
 
 def stop_current():
     _thread.exit()

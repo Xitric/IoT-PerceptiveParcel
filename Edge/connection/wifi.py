@@ -1,4 +1,3 @@
-from connection import ConnectionLostError
 from network import WLAN, STA_IF
 import utime
 
@@ -32,15 +31,18 @@ class Wifi:
                 listener()
             return True
         
+        self._station.disconnect()
         return False
 
     def is_connected(self):
         return self._station.isconnected()
 
     def disconnect(self):
-        self._station.disconnect()
+        if self.is_connected():
+            self._station.disconnect()
     
     def scan(self):
+        self.activate()
         return self._station.scan()
 
     def add_wifi_listener(self, listener):
