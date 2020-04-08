@@ -1,6 +1,3 @@
-ssid = "WIFI-NAME"
-pw = "PASSWORD"
-
 import utime
 from network import WLAN, STA_IF
 from machine import Pin, I2C
@@ -8,7 +5,8 @@ from micropython import const
 from umqttsimple import MQTTClient
 from hts221 import HTS221
 
-should_poll_threshold = True
+ssid = "WIFI-NAME"
+pw = "PASSWORD"
 
 max_temperature = 0
 max_humidity = 0
