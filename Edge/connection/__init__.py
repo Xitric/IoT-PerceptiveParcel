@@ -1,2 +1,4 @@
-from .connection import Connection, ConnectionError, ConnectionLostError, ServiceUnreachableError
-from .wifi_connection import WifiConnection
+from .connection import ConnectionError, ConnectionLostError, ServiceUnreachableError
+from .wifi import Wifi
+from .umqttsimple import MQTTClient, MQTTException
+from .mqtt_connection import MqttConnection
