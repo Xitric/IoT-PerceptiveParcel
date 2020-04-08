@@ -6,51 +6,47 @@ class Wifi:
 
     def __init__(self, ssid: str, pw: str):
         super().__init__()
-        self.station = WLAN(STA_IF)
-        self.ssid = ssid
-        self.pw = pw
+        self._station = WLAN(STA_IF)
+        self._ssid = ssid
+        self._pw = pw
+        self._listeners = []
 
     def activate(self):
-        if not self.station.active():
-            self.station.active(True)
+        if not self._station.active():
+            self._station.active(True)
 
     def deactivate(self):
         self.disconnect()
-        self.station.active(False)
+        self._station.active(False)
 
-    def is_connected(self):
-        return self.station.isconnected()
-
-    def connect(self):
-        while True:
-            try:
-                return self._connect()
-            except ConnectionLostError:
-                pass
-
-    def try_connect(self) -> bool:
-        try:
-            self._connect()
-            return True
-        except ConnectionLostError:
-            pass
-        return False
-
-    def _connect(self):
+    def connect(self) -> bool:
         self.activate()
 
-        print("Trying to connect to WiFi")
-        self.station.connect(self.ssid, self.pw)
-        utime.sleep(2)
+        if self._station.isconnected():
+            return True
+        
+        self._station.connect(self._ssid, self._pw)
+        utime.sleep(2)  # Allow the radio some time to connect
+        if self._station.isconnected():
+            for listener in self._listeners:
+                listener()
+            return True
+        
+        return False
 
-        if not self.station.isconnected():
-            print("Failed to reach Wifi")
-            raise ConnectionLostError
-        else:
-            print("WiFi enabled")
+    def is_connected(self):
+        return self._station.isconnected()
 
     def disconnect(self):
-        self.station.disconnect()
+        self._station.disconnect()
     
     def scan(self):
-        return self.station.scan()
+        return self._station.scan()
+
+    def add_wifi_listener(self, listener):
+        self._listeners.append(listener)
+        if self.is_connected():
+            listener()
+    
+    def remove_wifi_listener(self, listener):
+        self._listeners.remove(listener)
