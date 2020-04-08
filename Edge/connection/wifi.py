@@ -27,7 +27,8 @@ class Wifi:
         self._station.connect(self._ssid, self._pw)
         utime.sleep(2)  # Allow the radio some time to connect
         if self._station.isconnected():
-            for listener in self._listeners:
+            listeners = self._listeners[:]
+            for listener in listeners:
                 listener()
             return True
         
@@ -46,7 +47,8 @@ class Wifi:
         return self._station.scan()
 
     def add_wifi_listener(self, listener):
-        self._listeners.append(listener)
+        if listener not in self._listeners:
+            self._listeners.append(listener)
         if self.is_connected():
             listener()
     

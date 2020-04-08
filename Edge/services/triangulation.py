@@ -2,10 +2,14 @@ import utime
 from thread import Thread
 from connection import Wifi, MqttConnection
 import ujson
-from ubinascii import hexlify
-import os
+import ubinascii
 
 class RssiTable:
+    """
+    A class for keeping track of access points detected within the last minute.
+    This is necessary, since the set of reported access points is highly
+    volatile, even when the device is stationary.
+    """
 
     def __init__(self):
         self.table = {}
@@ -33,25 +37,30 @@ class RssiTable:
         return scan[1]
 
 
-class LocationTriangulation():
+class Triangulation:
+    """
+    A service for determining the relative location of a device with respect to
+    nearby Wifi access points.
+    """
 
     def __init__(self, wifi: Wifi, mqtt: MqttConnection):
-        self.thread = Thread(self.run, "ThreadLocation")
-        self.thread.start()
+        self.thread = Thread(self.__run, "ThreadTriangulation")
 
         self.table = RssiTable()
         self.wifi = wifi
         self.mqtt = mqtt
+    
+    def start(self):
+        self.thread.start()
 
-    def run(self, thread: Thread):
-        print(thread.active)
+    def __run(self, thread: Thread):
         while thread.active:
             self.wifi.disconnect()
             stations = self.wifi.scan()
             print("Got {}".format(stations))
 
             for station in stations:
-                self.table.add(hexlify(station[1]), station[3])
+                self.table.add(ubinascii.hexlify(station[1]), station[3])
             self.table.clean_table()
 
             self.send_location_fix(self.table.snapshot(3))
