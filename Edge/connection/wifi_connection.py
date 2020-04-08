@@ -1,4 +1,3 @@
-from connection import Connection, ConnectionLostError, ServiceUnreachableError
 from socket import socket
 from network import WLAN, STA_IF
 import utime
@@ -8,7 +7,17 @@ ECONNRESET = 104
 EHOSTUNREACH = 113
 ENONETWORK = 118
 
-class WifiConnection(Connection):
+# More meaningful errors
+class ConnectionError(Exception):
+    pass
+
+class ConnectionLostError(ConnectionError):
+    pass
+
+class ServiceUnreachableError(ConnectionError):
+    pass
+
+class WifiConnection:
 
     def __init__(self, ssid: str, pw: str, service: str, port: int):
         super().__init__()
@@ -19,9 +28,45 @@ class WifiConnection(Connection):
         self.port = port
         self.connection = None
 
-    def _connect(self):
+    def activate(self):
         if not self.station.active():
             self.station.active(True)
+
+    def deactivate(self):
+        self.disconnect()
+        self.station.active(False)
+
+    def connect(self):
+        successful = False
+
+        while not successful:
+            try:
+                self.__retry_connect()  # Does not throw any exceptions
+                self.__retry_connect_service()  # May throw a ConnectionLostError
+                successful = True
+            except ConnectionLostError:
+                pass
+
+    def __retry_connect(self):
+        connected = False
+        while not connected:
+            try:
+                self._connect()
+                connected = True
+            except ConnectionLostError:
+                pass
+    
+    def __retry_connect_service(self):
+        connected = False
+        while not connected:
+            try:
+                self._connect_service()
+                connected = True
+            except ServiceUnreachableError:
+                pass
+
+    def _connect(self):
+        self.activate()
 
         print("Trying to connect to WiFi")
         self.station.connect(self.ssid, self.pw)
@@ -63,7 +108,21 @@ class WifiConnection(Connection):
 
         # Disconnect from Wifi
         self.station.disconnect()
-        self.station.active(False)
+
+    def send(self, topic: str, payload: bytes):
+        successful = False
+
+        while not successful:
+            try:
+                self._send(topic, payload)
+                successful = True
+            except ConnectionLostError:
+                self.connect()
+            except ServiceUnreachableError:
+                try:
+                    self.__retry_connect_service()
+                except ConnectionLostError:
+                    self.connect()
 
     def _send(self, topic: str, payload: bytes):
         try:
@@ -75,6 +134,6 @@ class WifiConnection(Connection):
                 print("Lost connection to host")
                 raise ServiceUnreachableError
             raise  # Rethrow
-
-    def _receive(self, topic: str, callback):
-        pass
+    
+    def scan(self):
+        return self.station.scan()
