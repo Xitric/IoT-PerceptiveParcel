@@ -31,7 +31,7 @@ def topic_contains(topic, text):
     return text in topic.decode()
 
 
-def on_recieve(topic, msg):
+def on_receive(topic, msg):
     # if (received_temperature and received_humidity):
     #    client.disconnect()
     topic_decoded = topic.decode()
@@ -61,7 +61,7 @@ print("Connected to wifi")
 client = MQTTClient("client_id_420", "broker.hivemq.com")
 client.connect()
 
-client.set_callback(on_recieve)
+client.set_callback(on_receive)
 client.subscribe("iotproject123qwe/esp/maxTemperature", qos=1)
 client.subscribe("iotproject123qwe/esp/maxHumidity", qos=1)
 
