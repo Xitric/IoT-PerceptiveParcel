@@ -1,42 +1,45 @@
 # Since the standard implementation is clearly broken, this is adapted from:
 # https://github.com/micropython/micropython/blob/master/ports/esp8266/modules/ntptime.py
 from connection import Wifi
-from thread import Thread
-import socket
+import _thread
 import socket
 import struct
 import utime
 import machine
+import sys
 
 NTP_DELTA = 3155673600
 HOST = "dk.pool.ntp.org"
 
 class Ntp:
     """
-    A service for synchronizing the local clock with an NTP service once a day,
-    if possible.
+    A service for synchronizing the local clock with an NTP service once a day.
+    If the NTP service is unavailable, this service will retry synchronization
+    every hour.
     """
 
     def __init__(self, wifi: Wifi):
-        self.thread = Thread(self.__run, "ThreadNtp")
+        self.thread = _thread.start_new_thread(self.__run, ())
         self.wifi = wifi
 
     def start(self):
         self.thread.start()
     
-    def __run(self, thread: Thread):
-        while thread.active:
-            if self.wifi.connect():
-                self.__settime()
-            else:
-                self.wifi.add_wifi_listener(self.on_wifi)
-            
-            utime.sleep(60 * 60 * 24)
+    def __run(self):
+        try:
+            while True:
+                if self.wifi.connect():
+                    self.__settime()
+                    self.wifi.deactivate()
+                    utime.sleep(60 * 60 * 24)
+                else:
+                    # Retry in an hour
+                    utime.sleep(60 * 60)
+        except (KeyboardInterrupt, SystemExit):
+            pass
+        except BaseException as e:
+            sys.print_exception(e)
     
-    def on_wifi(self):
-        self.__settime()
-        self.wifi.remove_wifi_listener(self.on_wifi)
-
     def __time(self):
         ntp_query = bytearray(48)
         ntp_query[0] = 0x1B

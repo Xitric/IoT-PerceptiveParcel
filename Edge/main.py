@@ -1,38 +1,21 @@
 from connection import MessagingService, Wifi, MqttConnection
-from services import EnvironmentMonitor
+from services import Ntp, EnvironmentMonitor, Triangulation
 import _thread
 import utime
 import sys
 
-# Handle await/notify by using a lock that the awaiting thread is attempting to
-# acquire until someone else releases it
+try:
+    wifi = Wifi("AndroidAP", "vaqz2756")
+    mqtt = MqttConnection("broker.hivemq.com", wifi)
 
-# class Scheduler:
-#     """
-#     For scheduling jobs such as sampling sensors. Runs on the main thread.
-#     """
+    messaging_service = MessagingService(wifi)
+    messaging_service.add_channel(mqtt)
 
-#     def __init__(self):
-#         # Job scheduling
-#         self.job_queue = []
-    
-#     def start(self):
-#         pass
-
-#     def enqueue(self, job):
-#         pass
-
-
-wifi = Wifi("AndroidAP", "vaqz2756")
-mqtt = MqttConnection("broker.hivemq.com", wifi)
-
-messaging_service = MessagingService(wifi)
-messaging_service.add_channel(mqtt)
-
-environment_service = EnvironmentMonitor(wifi, mqtt, messaging_service)
-
-
-
+    ntp_service = Ntp(wifi)
+    environment_service = EnvironmentMonitor(wifi, mqtt, messaging_service)
+    triangulation_service = Triangulation(wifi, mqtt)
+except BaseException as e:
+    sys.print_exception(e)
 
 
 # Channels:

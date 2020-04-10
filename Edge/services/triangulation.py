@@ -1,8 +1,9 @@
 import utime
-from thread import Thread
+import _thread
 from connection import Wifi, MqttConnection
 import ujson
 import ubinascii
+import sys
 
 class RssiTable:
     """
@@ -51,7 +52,8 @@ class Triangulation:
     """
 
     def __init__(self, wifi: Wifi, mqtt: MqttConnection):
-        self.thread = Thread(self.__run, "ThreadTriangulation")
+        print("Eheh")
+        self.thread = _thread.start_new_thread(self.__run, ())
 
         self.table = RssiTable()
         self.wifi = wifi
@@ -62,21 +64,28 @@ class Triangulation:
     def start(self):
         self.thread.start()
 
-    def __run(self, thread: Thread):
-        while thread.active:
-            self.wifi.disconnect()
-            stations = self.wifi.scan()
-            print("Got {}".format(stations))
-
-            for station in stations:
-                self.table.add(ubinascii.hexlify(station[1]), station[3])
-            self.table.clean_table()
-
-            if not self.table.contains_any([ssid for ssid, _, _ in self.previous_snapshot]):
-                self.previous_snapshot = self.table.snapshot(3)
-                self.send_location_fix(self.previous_snapshot)
+    def __run(self):
+        print("hgiu")
+        try:
+            while True:
                 self.wifi.disconnect()
-            utime.sleep(10)  # TODO: Increase to 60 secs
+                stations = self.wifi.scan()
+                print("Got {}".format(stations))
+
+                for station in stations:
+                    self.table.add(ubinascii.hexlify(station[1]), station[3])
+                self.table.clean_table()
+
+                if not self.table.contains_any([ssid for ssid, _, _ in self.previous_snapshot]):
+                    self.previous_snapshot = self.table.snapshot(3)
+                    self.send_location_fix(self.previous_snapshot)
+                    self.wifi.disconnect()
+                utime.sleep(10)  # TODO: Increase to 60 secs
+
+        except (KeyboardInterrupt, SystemExit):
+            pass
+        except BaseException as e:
+            sys.print_exception(e)
 
     def send_location_fix(self, stations):
         payload = ujson.dumps(stations)

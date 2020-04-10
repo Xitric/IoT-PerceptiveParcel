@@ -4,19 +4,22 @@ import sys
 
 class MessagingService:
     """
-    For transmitting messages over Wifi, and buffering them locally in case no
-    internet is available.
+    For transmitting messages out of the device, and buffering them locally in
+    case a transmission channel is unavailable - such as missing Wifi.
 
     The messaging service can be in one of two possible states:
-    - Waiting: The service is dormant, waiting for new messages or network to
+    - Waiting: The service is dormant, waiting for new messages or a channel to
     become available.
-    - Transmitting: The service is currently transmitting messages over the
-    network.
+    - Transmitting: The service is currently transmitting messages.
 
-    Since messages are only sent on rare occasions, it is not possible to
-    publish new messages while the messaging service is in the transmitting
-    state. In this case, the publishing thread goes into a blocking wait, until
-    the messaging service returns to the waiting state.
+    When the local message buffer is empty, the messaging service will enter
+    the waiting state until explicitly notified of new messages. If any
+    messages are available, the service will attempt to transmit them every ten
+    minutes, or sooner if explicitly notified.
+
+    Channels are themselves reponsible for ensuring thread safety. For
+    instance, a channel might disallow buffering new messages during an active
+    transmission.
     """
 
     def __init__(self, wifi: Wifi):
@@ -35,8 +38,8 @@ class MessagingService:
         Notify the messaging service to begin transmitting messages again. If
         the messaging service is currently in a waiting state, calling this
         method will restart it. The messaging service will return to a waiting
-        state as soon as all pending messages have been transmitted, or the
-        network connection is lost.
+        state as soon as all pending messages have been transmitted, or
+        channels become unavailable.
         """
         if self._message_semaphore.locked():
             self._message_semaphore.release()
@@ -47,20 +50,16 @@ class MessagingService:
         # case of exceptions.
         try:
             while True:
-                # Try to acquire the semaphore. This will block the thread until the
-                # semaphore is released by the scheduler. The scheduler can release the
-                # semaphore to signal the messaging service when new data is ready to
-                # be transmitted.
-                # Do keep in mind that there is no concept of a thread holding a lock
-                # with this library. A lock is either locked or unlocked, and if the
-                # same thread attempts to acquire the same lock twice, it will block
+                # There is no concept of a thread holding a lock with this
+                # library. A lock is either locked or unlocked, and if the same
+                # thread attempts to acquire the same lock twice, it will block
                 # itself until someone else calls release on the lock.
 
                 if self.__has_pending_messages():
                     # While there are pending messages, retry every ten minutes
                     self._message_semaphore.acquire(1, 10 * 60)
                 else:
-                    # Otherwise wait for a signal
+                    # Otherwise wait for an explicit signal
                     self._message_semaphore.acquire()
                 
                 self._sync_lock.acquire()
@@ -72,6 +71,7 @@ class MessagingService:
                     for channel in self.channels:
                         channel.transmit()
                 finally:
+                    # In case Wifi was enabled, deactivate it now to save power
                     self.wifi.deactivate()
                     self._sync_lock.release()
         

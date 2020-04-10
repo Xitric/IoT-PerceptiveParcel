@@ -13,7 +13,8 @@ TOPIC_HUMIDITY_PUBLISH = 'hcklI67o/package/id123/humidity'
 class EnvironmentMonitor:
     """
     A service for monitoring the temperature and humidity around the device,
-    and notifying the cloud service when setpoint values are exceeded.
+    and notifying the cloud service when setpoint values are exceeded. It also
+    receives events from the cloud when setpoint values change.
     """
 
     def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService):
@@ -26,6 +27,8 @@ class EnvironmentMonitor:
         self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT, self._on_temperature_setpoint, 1)
         self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT, self._on_humidity_setpoint, 1)
         self.wifi.deactivate()
+
+        # TODO: Testing
         # self.temperature_setpoint = None
         # self.humidity_setpoint = None
         self.temperature_setpoint = 12

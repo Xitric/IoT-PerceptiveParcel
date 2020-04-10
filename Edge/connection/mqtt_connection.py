@@ -9,6 +9,15 @@ BUFFER_FILE = 'mqtt-buffer.txt'
 BUFFER_FILE_COPY = 'mqtt-buffer-copy.txt'
 
 class MqttConnection(MQTTClient):
+    """
+    A class for handling communication over MQTT using a Wifi connection. This
+    class automatically buffers messages locally when Wifi is not available.
+    Furthermore, requests to subscribe to topics are also buffered locally
+    until Wifi is available.
+
+    Messages are buffered in a file, while pending subscriptions are buffered
+    in-memory.
+    """
 
     def __init__(self, broker: str, wifi: Wifi):
         super().__init__(ubinascii.hexlify(machine.unique_id()), broker)
@@ -21,6 +30,9 @@ class MqttConnection(MQTTClient):
         self.sync_lock = _thread.allocate_lock()
 
     def has_pending_messages(self):
+        """
+        Check if there are pending subscriptions or messages in the buffer.
+        """
         return len(self._pending_subscriptions) > 0 or BUFFER_FILE in os.listdir()
 
     def transmit(self):
@@ -34,6 +46,11 @@ class MqttConnection(MQTTClient):
             self.sync_lock.release()
     
     def __transmit_buffer(self):
+        """
+        Transmit all messages in the buffer file to the MQTT broker. If
+        connection is lost underway, the remaining buffer will be retained to
+        ensure that no messages are lost.
+        """
         if BUFFER_FILE not in os.listdir():
             print("No buffer, nothing to do")
             return
@@ -60,6 +77,11 @@ class MqttConnection(MQTTClient):
         self.__retain_buffer(current_position)
 
     def __retain_buffer(self, begin: int):
+        """
+        Remove all messages from the buffer before the position in the `begin`
+        field, while keeping all messages after this position. If `begin` is
+        `None`, the buffer will be deleted entirely.
+        """
         if begin is None:
             print("Deleting buffer")
             os.remove(BUFFER_FILE)
@@ -78,6 +100,12 @@ class MqttConnection(MQTTClient):
         os.rename(BUFFER_FILE_COPY, BUFFER_FILE)
 
     def __transmit_message(self, topic: bytes, msg: bytes, retain=False, qos=0) -> bool:
+        """
+        Transmit a single message to the MQTT broker. If connection is lost,
+        this method will attempt to reconnect before giving up. If the message
+        is successfully transmitted, this method returns `True`. Otherwise, it
+        returns `False`.
+        """
         if self.sock is None:
             self.connect()
 
@@ -92,6 +120,7 @@ class MqttConnection(MQTTClient):
         return False
 
     def __handle_pending_subscriptions(self):
+        """Send all pending subscription requests to the MQTT broker."""
         pending_count = len(self._pending_subscriptions)
 
         for i in range(pending_count):
@@ -103,6 +132,12 @@ class MqttConnection(MQTTClient):
                 return
     
     def __handle_subscription(self, topic, qos=0) -> bool:
+        """
+        Transmit a single subscription request to the MQTT broker. If
+        connection is lost, this method will attempt to reconnect before giving
+        up. If the request is successfully transmitted, this method returns
+        `True`. Otherwise, it returns `False`.
+        """
         if self.sock is None:
             self.connect()
 
@@ -117,6 +152,10 @@ class MqttConnection(MQTTClient):
         return False
 
     def __reconnect(self):
+        """
+        Try to connect to the MQTT broker using an existing session. If no
+        session is available, then a new session is created.
+        """
         if self.sock is None:
             print("Connecting")
             self.connect()
@@ -126,6 +165,7 @@ class MqttConnection(MQTTClient):
             self.connect(False)
 
     def publish(self, topic: bytes, msg: bytes, retain=False, qos=0):
+        """Enqueue a new message to be transmitted later."""
         self.sync_lock.acquire()
         try:
             with open(BUFFER_FILE, 'a') as buffer:
@@ -136,6 +176,7 @@ class MqttConnection(MQTTClient):
             self.sync_lock.release()
     
     def subscribe(self, topic, callback, qos=0):
+        """Enqueue a new subscription request to be transmitted later."""
         self.sync_lock.acquire()
         try:
             if topic in self._subscribers:
@@ -148,6 +189,7 @@ class MqttConnection(MQTTClient):
             self.sync_lock.release()
     
     def __on_receive(self, topic, msg):
+        """Handle messages received from the MQTT broker."""
         topic_decoded = topic.decode()
         msg_decoded = msg.decode()
 
