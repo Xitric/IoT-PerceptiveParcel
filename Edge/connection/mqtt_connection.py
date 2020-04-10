@@ -2,6 +2,7 @@ from connection import Wifi, MQTTClient
 import ubinascii
 import machine
 import os
+import _thread
 
 EHOSTUNREACH = 113
 BUFFER_FILE = 'mqtt-buffer.txt'
@@ -12,19 +13,27 @@ class MqttConnection(MQTTClient):
     def __init__(self, broker: str, wifi: Wifi):
         super().__init__(ubinascii.hexlify(machine.unique_id()), broker)
         self.wifi = wifi
-        self.wifi.add_wifi_listener(self.on_wifi)
 
         self._subscribers = {}
         self._pending_subscriptions = []
         super().set_callback(self.__on_receive)
 
-    # TODO: Thread safe callback with locks
-    def on_wifi(self):
-        print("Device reconnected to Wifi")
-        self.__publish_buffer()
-        self.__handle_pending_subscriptions()
+        self.sync_lock = _thread.allocate_lock()
+
+    def has_pending_messages(self):
+        return len(self._pending_subscriptions) > 0 or BUFFER_FILE in os.listdir()
+
+    def transmit(self):
+        self.sync_lock.acquire()
+        try:
+            if self.wifi.connect():
+                print("Device reconnected to Wifi")
+                self.__transmit_buffer()
+                self.__handle_pending_subscriptions()
+        finally:
+            self.sync_lock.release()
     
-    def __publish_buffer(self):
+    def __transmit_buffer(self):
         if BUFFER_FILE not in os.listdir():
             print("No buffer, nothing to do")
             return
@@ -44,7 +53,7 @@ class MqttConnection(MQTTClient):
                 qos = int(meta_elements[2])
                 msg = buffer.readline()
 
-                if not self.__publish(topic, msg, retain, qos):
+                if not self.__transmit_message(topic, msg, retain, qos):
                     print("Couldn't publish message, even after reconnecting!?")
                     break
         
@@ -68,35 +77,7 @@ class MqttConnection(MQTTClient):
         os.remove(BUFFER_FILE)
         os.rename(BUFFER_FILE_COPY, BUFFER_FILE)
 
-    def __handle_pending_subscriptions(self):
-        pending_count = len(self._pending_subscriptions)
-
-        for i in range(pending_count):
-            next = self._pending_subscriptions[pending_count - i - 1]
-            if self.__subscribe(next[0], next[1]):
-                self._pending_subscriptions.pop()
-            else:
-                print("Unable to subscribe even after reconnect")
-                return
-
-    def reconnect(self):
-        if self.sock is None:
-            print("Connecting")
-            self.connect()
-        else:
-            print("Reconnecting")
-            self.sock.close()
-            super().connect(False)
-
-    def publish(self, topic: bytes, msg: bytes, retain=False, qos=0) -> bool:
-        if self.wifi.connect():
-            if self.__publish(topic, msg, retain, qos):
-                return True
-            
-        self.__buffer(topic, msg, retain, qos)
-        return False
-    
-    def __publish(self, topic: bytes, msg: bytes, retain=False, qos=0) -> bool:
+    def __transmit_message(self, topic: bytes, msg: bytes, retain=False, qos=0) -> bool:
         if self.sock is None:
             self.connect()
 
@@ -107,28 +88,21 @@ class MqttConnection(MQTTClient):
                 return True
             except OSError as osErr:
                 if osErr.args[0] is EHOSTUNREACH and retry is 0:
-                    self.reconnect()
+                    self.__reconnect()
         return False
-    
-    def __buffer(self, topic: bytes, msg: bytes, retain=False, qos=0):
-        with open(BUFFER_FILE, 'a') as buffer:
-            buffer.write('{};{};{}\n'.format(topic, retain, qos))
-            buffer.write('{}\n'.format(msg))
-        print("Buffered {}".format(msg))
-    
-    def subscribe(self, topic, callback, qos=0):
-        if topic in self._subscribers:
-            self._subscribers[topic].append(callback)
-        else:
-            self._subscribers[topic] = [callback]
-        
-        if self.wifi.connect():
-            if self.__subscribe(topic, qos):
+
+    def __handle_pending_subscriptions(self):
+        pending_count = len(self._pending_subscriptions)
+
+        for i in range(pending_count):
+            next = self._pending_subscriptions[pending_count - i - 1]
+            if self.__handle_subscription(next[0], next[1]):
+                self._pending_subscriptions.pop()
+            else:
+                print("Unable to subscribe even after reconnect")
                 return
-        print('Unable to contact broker with subscription')
-        self._pending_subscriptions.append((topic, qos))
     
-    def __subscribe(self, topic, qos=0) -> bool:
+    def __handle_subscription(self, topic, qos=0) -> bool:
         if self.sock is None:
             self.connect()
 
@@ -139,12 +113,47 @@ class MqttConnection(MQTTClient):
                 return True
             except OSError as osErr:
                 if osErr.args[0] is EHOSTUNREACH and retry is 0:
-                    self.reconnect()
+                    self.__reconnect()
         return False
+
+    def __reconnect(self):
+        if self.sock is None:
+            print("Connecting")
+            self.connect()
+        else:
+            print("Reconnecting")
+            self.sock.close()
+            self.connect(False)
+
+    def publish(self, topic: bytes, msg: bytes, retain=False, qos=0):
+        self.sync_lock.acquire()
+        try:
+            with open(BUFFER_FILE, 'a') as buffer:
+                buffer.write('{};{};{}\n'.format(topic, retain, qos))
+                buffer.write('{}\n'.format(msg))
+            print("Buffered {}".format(msg))
+        finally:
+            self.sync_lock.release()
+    
+    def subscribe(self, topic, callback, qos=0):
+        self.sync_lock.acquire()
+        try:
+            if topic in self._subscribers:
+                self._subscribers[topic].append(callback)
+            else:
+                self._subscribers[topic] = [callback]
+            
+            self._pending_subscriptions.append((topic, qos))
+        finally:
+            self.sync_lock.release()
     
     def __on_receive(self, topic, msg):
         topic_decoded = topic.decode()
         msg_decoded = msg.decode()
 
-        for subscriber in self._subscribers[topic_decoded]:
-            subscriber(topic_decoded, msg_decoded)
+        self.sync_lock.acquire()
+        try:
+            for subscriber in self._subscribers[topic_decoded]:
+                subscriber(topic_decoded, msg_decoded)
+        finally:
+            self.sync_lock.release()
