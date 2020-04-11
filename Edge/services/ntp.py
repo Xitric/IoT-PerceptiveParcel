@@ -28,13 +28,19 @@ class Ntp:
     def __run(self):
         try:
             while True:
-                if self.wifi.connect():
-                    self.__settime()
+                self.wifi.acquire()
+                try:
+                    if self.wifi.connect():
+                        self.__settime()
+                        continue
+                finally:
+                    self.wifi.release()
                     self.wifi.deactivate()
                     utime.sleep(60 * 60 * 24)
-                else:
-                    # Retry in an hour
-                    utime.sleep(60 * 60)
+                
+                # Retry in an hour
+                utime.sleep(60 * 60)
+
         except (KeyboardInterrupt, SystemExit):
             pass
         except BaseException as e:

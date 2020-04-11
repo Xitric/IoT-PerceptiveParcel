@@ -37,12 +37,14 @@ class MqttConnection(MQTTClient):
 
     def transmit(self):
         self.sync_lock.acquire()
+        self.wifi.acquire()
         try:
             if self.wifi.connect():
                 print("Device reconnected to Wifi")
                 self.__transmit_buffer()
                 self.__handle_pending_subscriptions()
         finally:
+            self.wifi.release()
             self.sync_lock.release()
     
     def __transmit_buffer(self):

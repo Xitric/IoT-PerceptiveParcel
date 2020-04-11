@@ -69,8 +69,14 @@ class Triangulation:
         try:
             while True:
                 self.wifi.disconnect()
-                stations = self.wifi.scan()
-                print("Got {}".format(stations))
+                self.wifi.acquire()
+
+                try:
+                    stations = self.wifi.scan()
+                    print("Got {}".format(stations))
+                finally:
+                    self.wifi.release()
+                    self.wifi.deactivate()
 
                 for station in stations:
                     self.table.add(ubinascii.hexlify(station[1]), station[3])
@@ -78,15 +84,12 @@ class Triangulation:
 
                 if not self.table.contains_any([ssid for ssid, _, _ in self.previous_snapshot]):
                     self.previous_snapshot = self.table.snapshot(3)
-                    self.send_location_fix(self.previous_snapshot)
-                    self.wifi.disconnect()
+                    payload = ujson.dumps(self.previous_snapshot)
+                    self.mqtt.publish(b'hcklI67o/package/123/maclocation', payload.encode("utf-8"))
+
                 utime.sleep(10)  # TODO: Increase to 60 secs
 
         except (KeyboardInterrupt, SystemExit):
             pass
         except BaseException as e:
             sys.print_exception(e)
-
-    def send_location_fix(self, stations):
-        payload = ujson.dumps(stations)
-        self.mqtt.publish(b'hcklI67o/package/123/maclocation', payload.encode("utf-8"))
