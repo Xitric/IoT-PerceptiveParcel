@@ -29,6 +29,8 @@ class Wifi:
         self._station = WLAN(STA_IF)
         self._ssid = ssid
         self._pw = pw
+
+        # Readers-writer lock for activation/deactivation
         self.__readers_lock = _thread.allocate_lock()
         self.__global_lock = _thread.allocate_lock()
         self.__clients = []
@@ -38,18 +40,21 @@ class Wifi:
         if not self._station.active():
             self._station.active(True)
 
-    def deactivate(self):
+    def deactivate(self, blocking=True):
         """
         Turn off the Wifi radio. This will also disconnect from the access
         point, if connected. If the Wifi radio is used by other threads, this
-        method will block until Wifi can be deactivated.
+        method will block until Wifi can be deactivated. Alternatively, the the
+        client can pass `False` to the `blocking` parameter to return
+        immediately if the radio is used by others. This is useful if
+        deactivation of the radio is not a hard requirement, but simply a hint.
         """
-        self.__global_lock.acquire()
-        try:
-            self.__disconnect()
-            self._station.active(False)
-        finally:
-            self.__global_lock.acquire()
+        if self.__global_lock.acquire(1 if blocking else 0):
+            try:
+                self.__disconnect()
+                self._station.active(False)
+            finally:
+                self.__global_lock.acquire()
 
     def connect(self) -> bool:
         """
@@ -74,17 +79,20 @@ class Wifi:
         """Check if currently connected to the access point."""
         return self._station.isconnected()
 
-    def disconnect(self):
+    def disconnect(self, blocking=True):
         """
         Disconnect from the access point if currently connected. If the Wifi
         radio is currently used by other threads, this method will block until
-        it is possible to disconnect.
+        it is possible to disconnect. Alternatively, the the client can pass
+        `False` to the `blocking` parameter to return immediately if the radio 
+        is used by others. This is useful if deactivation of the radio is not a
+        hard requirement, but simply a hint.
         """
-        self.__global_lock.acquire()
-        try:
-            self.__disconnect()
-        finally:
-            self.__global_lock.acquire()
+        if self.__global_lock.acquire(1 if blocking else 0):
+            try:
+                self.__disconnect()
+            finally:
+                self.__global_lock.acquire()
     
     def __disconnect(self):
         if self.is_connected():

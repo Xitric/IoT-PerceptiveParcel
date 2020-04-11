@@ -26,7 +26,7 @@ class EnvironmentMonitor:
 
         self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT, self._on_temperature_setpoint, 1)
         self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT, self._on_humidity_setpoint, 1)
-        self.wifi.deactivate()
+        self.wifi.deactivate(False)
 
         # TODO: Testing
         # self.temperature_setpoint = None

@@ -68,6 +68,7 @@ class Triangulation:
         print("hgiu")
         try:
             while True:
+                # We cannot scan if we are connected to an access point
                 self.wifi.disconnect()
                 self.wifi.acquire()
 
@@ -76,7 +77,7 @@ class Triangulation:
                     print("Got {}".format(stations))
                 finally:
                     self.wifi.release()
-                    self.wifi.deactivate()
+                    self.wifi.deactivate(False)
 
                 for station in stations:
                     self.table.add(ubinascii.hexlify(station[1]), station[3])

@@ -35,7 +35,7 @@ class Ntp:
                         continue
                 finally:
                     self.wifi.release()
-                    self.wifi.deactivate()
+                    self.wifi.deactivate(False)
                     utime.sleep(60 * 60 * 24)
                 
                 # Retry in an hour
