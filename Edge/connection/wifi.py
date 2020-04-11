@@ -54,7 +54,7 @@ class Wifi:
                 self.__disconnect()
                 self._station.active(False)
             finally:
-                self.__global_lock.acquire()
+                self.__global_lock.release()
 
     def connect(self) -> bool:
         """
@@ -92,7 +92,7 @@ class Wifi:
             try:
                 self.__disconnect()
             finally:
-                self.__global_lock.acquire()
+                self.__global_lock.release()
     
     def __disconnect(self):
         if self.is_connected():

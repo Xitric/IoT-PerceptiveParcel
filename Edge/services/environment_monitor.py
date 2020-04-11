@@ -18,15 +18,9 @@ class EnvironmentMonitor:
     """
 
     def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService):
-        self.thread = _thread.start_new_thread(self.__run, ())
-
         self.wifi = wifi
         self.mqtt = mqtt
         self.messaging = messaging
-
-        self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT, self._on_temperature_setpoint, 1)
-        self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT, self._on_humidity_setpoint, 1)
-        self.wifi.deactivate(False)
 
         # TODO: Testing
         # self.temperature_setpoint = None
@@ -36,8 +30,14 @@ class EnvironmentMonitor:
 
         self.sensor = HTS221(I2C(-1, Pin(26, Pin.IN), Pin(25, Pin.OUT)))
 
+        self.thread = _thread.start_new_thread(self.__run, ())
+
     def __run(self):
         try:
+            self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT, self._on_temperature_setpoint, 1)
+            self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT, self._on_humidity_setpoint, 1)
+            self.wifi.deactivate(False)
+
             while True:
                 did_transmit = False
 

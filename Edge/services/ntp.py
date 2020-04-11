@@ -19,8 +19,8 @@ class Ntp:
     """
 
     def __init__(self, wifi: Wifi):
-        self.thread = _thread.start_new_thread(self.__run, ())
         self.wifi = wifi
+        self.thread = _thread.start_new_thread(self.__run, ())
 
     def start(self):
         self.thread.start()

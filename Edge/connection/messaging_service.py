@@ -25,13 +25,14 @@ class MessagingService:
     def __init__(self, wifi: Wifi):
         self.wifi = wifi
         self.channels = []
-        self.thread = _thread.start_new_thread(self.__messaging_loop, ())
         
         # Semaphore for signaling the messaging service
         self._message_semaphore = _thread.allocate_lock()
 
         # Lock for protecting critical regions
         self._sync_lock = _thread.allocate_lock()
+
+        self.thread = _thread.start_new_thread(self.__messaging_loop, ())
 
     def notify(self):
         """

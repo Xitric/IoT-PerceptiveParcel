@@ -52,20 +52,18 @@ class Triangulation:
     """
 
     def __init__(self, wifi: Wifi, mqtt: MqttConnection):
-        print("Eheh")
-        self.thread = _thread.start_new_thread(self.__run, ())
-
         self.table = RssiTable()
         self.wifi = wifi
         self.mqtt = mqtt
 
         self.previous_snapshot = []
+
+        self.thread = _thread.start_new_thread(self.__run, ())
     
     def start(self):
         self.thread.start()
 
     def __run(self):
-        print("hgiu")
         try:
             while True:
                 # We cannot scan if we are connected to an access point
