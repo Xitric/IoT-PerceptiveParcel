@@ -166,7 +166,7 @@ class MqttConnection(MQTTClient):
             self.sock.close()
             self.connect(False)
 
-    def publish(self, topic: bytes, msg: bytes, retain=False, qos=0):
+    def publish(self, topic: bytes, msg, retain=False, qos=0):
         """Enqueue a new message to be transmitted later."""
         self.sync_lock.acquire()
         try:

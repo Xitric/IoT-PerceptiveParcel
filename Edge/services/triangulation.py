@@ -81,10 +81,10 @@ class Triangulation:
                     self.table.add(ubinascii.hexlify(station[1]), station[3])
                 self.table.clean_table()
 
-                if not self.table.contains_any([ssid for ssid, _, _ in self.previous_snapshot]):
+                if len(stations) > 0 and not self.table.contains_any([ssid for ssid, _, _ in self.previous_snapshot]):
                     self.previous_snapshot = self.table.snapshot(3)
                     payload = ujson.dumps(self.previous_snapshot)
-                    self.mqtt.publish(b'hcklI67o/package/123/maclocation', payload.encode("utf-8"))
+                    self.mqtt.publish('hcklI67o/package/123/maclocation', payload)
 
                 utime.sleep(10)  # TODO: Increase to 60 secs
 

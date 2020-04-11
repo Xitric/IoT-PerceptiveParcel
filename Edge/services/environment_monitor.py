@@ -64,7 +64,7 @@ class EnvironmentMonitor:
         temperature = self.sensor.read_temp()
         print("Read temperature: {}".format(temperature))
         if temperature > self.temperature_setpoint:
-            self.mqtt.publish(TOPIC_TEMPERATURE_PUBLISH, str(temperature).encode(), qos=1)
+            self.mqtt.publish(TOPIC_TEMPERATURE_PUBLISH, temperature, qos=1)
             return True
         return False
 
@@ -72,7 +72,7 @@ class EnvironmentMonitor:
         humidity = self.sensor.read_humi()
         print("Read humidity: {}".format(humidity))
         if humidity > self.humidity_setpoint:
-            self.mqtt.publish(TOPIC_HUMIDITY_PUBLISH, str(humidity).encode(), qos=1)
+            self.mqtt.publish(TOPIC_HUMIDITY_PUBLISH, humidity, qos=1)
             return True
         return False
 
