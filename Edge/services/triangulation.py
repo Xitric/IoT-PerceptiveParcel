@@ -86,7 +86,7 @@ class Triangulation:
                     payload = ujson.dumps(self.previous_snapshot)
                     self.mqtt.publish('hcklI67o/package/123/maclocation', payload)
 
-                utime.sleep(10)  # TODO: Increase to 60 secs
+                utime.sleep(60)  # TODO: Increase to 60 secs
 
         except (KeyboardInterrupt, SystemExit):
             pass

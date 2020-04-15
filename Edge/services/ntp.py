@@ -31,8 +31,12 @@ class Ntp:
                 self.wifi.acquire()
                 try:
                     if self.wifi.connect():
+                        utime.sleep(5)  # Sometimes it fails if we are too fast?
                         self.__settime()
                         continue
+                except IndexError:
+                    # TODO: I have no idea why this happens sometimes
+                    pass
                 finally:
                     self.wifi.release()
                     self.wifi.deactivate(False)
