@@ -1,1 +1,0 @@
-alert("Damn, it works!")
