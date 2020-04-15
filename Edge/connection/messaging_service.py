@@ -72,7 +72,7 @@ class MessagingService:
                     for channel in self.channels:
                         channel.transmit()
                 finally:
-                    # In case Wifi was enabled, deactivate it now to save power
+                    # In case Wifi was enabled, deactivate it now to save energy
                     self.wifi.deactivate()
                     self._sync_lock.release()
         

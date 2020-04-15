@@ -51,8 +51,10 @@ class Wifi:
         """
         if self.__global_lock.acquire(1 if blocking else 0):
             try:
-                self.__disconnect()
-                self._station.active(False)
+                if self._station.isconnected():
+                    self.__disconnect()
+                if self._station.active():
+                    self._station.active(False)
             finally:
                 self.__global_lock.release()
 
@@ -104,7 +106,11 @@ class Wifi:
         automatically be enabled.
         """
         self.activate()
-        return self._station.scan()
+        for _ in range(3):
+            try:
+                return self._station.scan()
+            except RuntimeError:
+                utime.sleep(1)  # Give radio time to turn on
 
     def acquire(self):
         """
@@ -135,7 +141,7 @@ class Wifi:
             tid = _thread.get_ident()
             if tid in self.__clients:
                 self.__clients.remove(tid)
-                if len(self.__clients) == 0:
+                if len(self.__clients) == 0 and self.__global_lock.locked():
                     self.__global_lock.release()
         finally:
             self.__readers_lock.release()

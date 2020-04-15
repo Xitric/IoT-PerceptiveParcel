@@ -3,6 +3,8 @@ import ubinascii
 import machine
 import os
 import _thread
+import utime
+import sys
 
 EHOSTUNREACH = 113
 BUFFER_FILE = 'mqtt-buffer.txt'
@@ -28,6 +30,8 @@ class MqttConnection(MQTTClient):
         super().set_callback(self.__on_receive)
 
         self.sync_lock = _thread.allocate_lock()
+
+        self.thread = _thread.start_new_thread(self.__receive_loop, ())
 
     def has_pending_messages(self):
         """
@@ -116,8 +120,8 @@ class MqttConnection(MQTTClient):
                 super().publish(topic, msg, retain, qos)
                 print("Successfully published {}".format(msg))
                 return True
-            except OSError as osErr:
-                if osErr.args[0] is EHOSTUNREACH and retry is 0:
+            except OSError:
+                if retry is 0:
                     self.__reconnect()
         return False
 
@@ -148,8 +152,8 @@ class MqttConnection(MQTTClient):
                 super().subscribe(topic, qos)
                 print("Successfully subscribed to {}".format(topic))
                 return True
-            except OSError as osErr:
-                if osErr.args[0] is EHOSTUNREACH and retry is 0:
+            except OSError:
+                if retry is 0:
                     self.__reconnect()
         return False
 
@@ -159,10 +163,8 @@ class MqttConnection(MQTTClient):
         session is available, then a new session is created.
         """
         if self.sock is None:
-            print("Connecting")
             self.connect()
         else:
-            print("Reconnecting")
             self.sock.close()
             self.connect(False)
 
@@ -190,6 +192,37 @@ class MqttConnection(MQTTClient):
         finally:
             self.sync_lock.release()
     
+    def __receive_loop(self):
+        try:
+            while True:
+                self.sync_lock.acquire()
+                self.wifi.acquire()
+                try:
+                    if self.wifi.connect():
+                        if self.sock is None:
+                            self.connect()
+                        
+                        print("Checking for new messages")
+                        for retry in range(2):
+                            try:
+                                super().check_msg()
+                                break
+                            except OSError:
+                                if retry is 0:
+                                    self.__reconnect()
+                finally:
+                    self.wifi.release()
+                    self.sync_lock.release()
+                    self.wifi.deactivate(False)
+                    utime.sleep(30)
+        
+        except (KeyboardInterrupt, SystemExit):
+            pass
+        except BaseException as e:
+            sys.print_exception(e)
+        finally:
+            print("Goodbye")
+
     def __on_receive(self, topic, msg):
         """Handle messages received from the MQTT broker."""
         topic_decoded = topic.decode()

@@ -1,6 +1,6 @@
 import utime
 import _thread
-from connection import Wifi, MqttConnection
+from connection import MessagingService, Wifi, MqttConnection
 import ujson
 import ubinascii
 import sys
@@ -21,7 +21,7 @@ class RssiTable:
     def clean_table(self):
         for entry in self.table:
             time_added = self.table[entry][1]
-            if utime.time() - time_added > 60:
+            if utime.time() - time_added > 70:
                 del self.table[entry]
     
     def snapshot(self, limit: int = -1):
@@ -32,13 +32,6 @@ class RssiTable:
         
         sorted_scans = sorted(scans, key=self.signal_strength, reverse=True)
         return sorted_scans[:limit]
-    
-    def contains_any(self, stations) -> bool:
-        for ssid in self.table:
-            if ssid in stations:
-                return True
-        
-        return False
     
     @staticmethod
     def signal_strength(scan):
@@ -51,10 +44,11 @@ class Triangulation:
     nearby Wifi access points.
     """
 
-    def __init__(self, wifi: Wifi, mqtt: MqttConnection):
+    def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService):
         self.table = RssiTable()
         self.wifi = wifi
         self.mqtt = mqtt
+        self.messaging = messaging
 
         self.previous_snapshot = []
 
@@ -62,6 +56,13 @@ class Triangulation:
     
     def start(self):
         self.thread.start()
+
+    def __unique_sets(self, a, b):
+        for (a_elem, _, _) in a:
+            for (b_elem, _, _) in b:
+                if a_elem == b_elem:
+                    return False
+        return True
 
     def __run(self):
         try:
@@ -81,12 +82,15 @@ class Triangulation:
                     self.table.add(ubinascii.hexlify(station[1]), station[3])
                 self.table.clean_table()
 
-                if len(stations) > 0 and not self.table.contains_any([ssid for ssid, _, _ in self.previous_snapshot]):
-                    self.previous_snapshot = self.table.snapshot(3)
+                new_snapshot = self.table.snapshot(3)
+
+                if len(stations) > 2 and self.__unique_sets(new_snapshot, self.previous_snapshot):
+                    self.previous_snapshot = new_snapshot
                     payload = ujson.dumps(self.previous_snapshot)
                     self.mqtt.publish('hcklI67o/package/123/maclocation', payload)
+                    self.messaging.notify()
 
-                utime.sleep(10)  # TODO: Increase to 60 secs
+                utime.sleep(30)
 
         except (KeyboardInterrupt, SystemExit):
             pass
