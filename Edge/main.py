@@ -9,4 +9,4 @@ messaging_service.add_channel(mqtt)
 
 ntp_service = Ntp(wifi)
 environment_service = EnvironmentMonitor(wifi, mqtt, messaging_service)
-triangulation_service = Triangulation(wifi, mqtt)
+triangulation_service = Triangulation(wifi, mqtt, messaging_service)
