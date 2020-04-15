@@ -1,0 +1,55 @@
+@prefix frame: <https://brickschema.org/schema/1.0.3/BrickFrame#> .
+@prefix brick: <https://brickschema.org/schema/1.0.3/Brick#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix iotPP: <https://github.com/Xitric/IoT-PerceptiveParcel#> .
+
+iotPP:Package a owl:Class .
+iotPP:SetPoint a owl:Class .
+iotPP:EventValue a owl:Class .
+iotPP:Event a owl:Class .
+iotPP:Topic a owl:Class .
+
+iotPP:TemperaturSetPoint rdfs:subClassOf iotPP:SetPoint .
+iotPP:HumititySetPoint rdfs:subClassOf iotPP:SetPoint .
+iotPP:MotionSetPoint rdfs:subClassOf iotPP:SetPoint .
+
+iotPP:TemperatureViolation rdfs:subClassOf iotPP:Event .
+iotPP:HumitityViolation rdfs:subClassOf iotPP:Event .
+iotPP:MotionViolation rdfs:subClassOf iotPP:Event .
+
+iotPP:timestamp rdfs:subClassOf owl:DatatypeProperty;
+    rdfs:domain iotPP:Event ;
+    rdfs:range xsd:dateTime .
+
+iotPP:packageId rdfs:subClassOf owl:DatatypeProperty;
+    rdfs:domain iotPP:Package ;
+    rdfs:range xsd:ID .
+
+iotPP:topicName rdfs:subClassOf owl:DatatypeProperty;
+    rdfs:domain iotPP:Topic ;
+    rdfs:range xsd:string .
+
+iotPP:hasValue rdfs:subClassOf owl:ObjectProperty;
+    rdfs:domain iotPP:Event ;
+    rdfs:range iotPP:EventValue .
+
+iotPP:hasEvent rdfs:subClassOf owl:ObjectProperty;
+    rdfs:domain iotPP:Topic ;
+    rdfs:range iotPP:Event .
+
+iotPP:hasSetPoint rdfs:subClassOf owl:ObjectProperty;
+    rdfs:domain iotPP:Package ;
+    rdfs:range iotPP:SetPoint .
+
+iotPP:hasPackage rdfs:subClassOf owl:ObjectProperty;
+    rdfs:domain iotPP:Event ;
+    rdfs:range iotPP:Package . 
+
+
+
+
+
+

@@ -1,0 +1,97 @@
+@prefix brick: <https://brickschema.org/schema/1.0.3/Brick#> .
+@prefix frame: <https://brickschema.org/schema/1.0.3/BrickFrame#> .
+@prefix iotPP: <https://github.com/Xitric/IoT-PerceptiveParcel#> .
+@prefix iotpp: <https://github.com/Xitric/IoT-PerceptiveParcel#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/event/MotionViolation/1> a iotpp:MotionViolation ;
+    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> ;
+    iotpp:hasValue <https://github.com/Xitric/IoT-PerceptiveParcel#/eventvalue/1> ;
+    iotpp:timestamp "2004-12-26T21:32:52"^^xsd:dateTime .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/event/humitityViolation/1> a iotpp:HumitityViolation ;
+    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> ;
+    iotpp:hasValue <https://github.com/Xitric/IoT-PerceptiveParcel#/eventvalue/1> ;
+    iotpp:timestamp "2003-12-26T21:32:52"^^xsd:dateTime .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/event/temperatureViolation/1> a iotpp:TemperatureViolation ;
+    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> ;
+    iotpp:hasValue <https://github.com/Xitric/IoT-PerceptiveParcel#/eventvalue/1> ;
+    iotpp:timestamp "2002-11-26T21:32:52"^^xsd:dateTime .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/topic/1> a iotpp:Topic ;
+    iotpp:hasEvent <https://github.com/Xitric/IoT-PerceptiveParcel#/event/1> ;
+    iotpp:topicName "tempTooHigh"^^xsd:string .
+
+iotpp:hasEvent rdfs:domain iotpp:Topic ;
+    rdfs:range iotpp:Event ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasPackage rdfs:domain iotpp:Event ;
+    rdfs:range iotpp:Package ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasSetPoint rdfs:domain iotpp:Package ;
+    rdfs:range iotpp:SetPoint ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasValue rdfs:domain iotpp:Event ;
+    rdfs:range iotpp:EventValue ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:packageId rdfs:domain iotpp:Package ;
+    rdfs:range xsd:ID ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:timestamp rdfs:domain iotpp:Event ;
+    rdfs:range xsd:dateTime ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:topicName rdfs:domain iotpp:Topic ;
+    rdfs:range xsd:string ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/event/1> a iotpp:Event,
+        iotpp:EventValue ;
+    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> ;
+    iotpp:hasValue <https://github.com/Xitric/IoT-PerceptiveParcel#/eventvalue/1> ;
+    iotpp:timestamp "2001-10-26T21:32:52"^^xsd:dateTime .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/humititySetPoint/1> a iotpp:HumititySetPoint .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/motionSetPoint/1> a iotpp:MotionSetPoint .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/temperaturSetPoint/1> a iotpp:TemperaturSetPoint .
+
+iotpp:HumititySetPoint rdfs:subClassOf iotpp:SetPoint .
+
+iotpp:HumitityViolation rdfs:subClassOf iotpp:Event .
+
+iotpp:MotionSetPoint rdfs:subClassOf iotpp:SetPoint .
+
+iotpp:MotionViolation rdfs:subClassOf iotpp:Event .
+
+iotpp:TemperaturSetPoint rdfs:subClassOf iotpp:SetPoint .
+
+iotpp:TemperatureViolation rdfs:subClassOf iotpp:Event .
+
+iotpp:EventValue a owl:Class .
+
+iotpp:Topic a owl:Class .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> a iotpp:Package ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/humititySetPoint/1>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/motionSetPoint/1>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/temperaturSetPoint/1> ;
+    iotpp:packageId "ab3dm23jhl43bfj"^^xsd:ID .
+
+iotpp:Package a owl:Class .
+
+iotpp:SetPoint a owl:Class .
+
+iotpp:Event a owl:Class .
+
