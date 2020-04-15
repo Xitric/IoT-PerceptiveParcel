@@ -1,23 +1,16 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Track package</title>
-
-        <!--  Leaflet  -->
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
-            integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-            crossorigin=""/>
-        <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
-            integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
-            crossorigin=""></script>
-        
-        <!-- Styling -->
-        <link rel="stylesheet" type="text/css" href="/css/styles.css">
-    </head>
-    <body>
-        <h1>Welcome to package tracking</h1>
-        <div id="leaflet-map"></div>
-        <script async src="/js/leaflet.js"></script>
-        <!--<script id="graph" src='/scripts/{{script}}.js'>{{{jsonStringify data}}}</script>-->
-    </body>
-</html>
+{% extends "layout.html" %}
+{% block title %}Track package{% endblock %}
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+        integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+        crossorigin=""></script>
+{% endblock %}
+{% block body %}
+    <h1>Welcome to package tracking</h1>
+    <div id="leaflet-map"></div>
+    <script async src="/js/leaflet.js" id="mapScript">{{route|safe}}</script>
+{% endblock %}
