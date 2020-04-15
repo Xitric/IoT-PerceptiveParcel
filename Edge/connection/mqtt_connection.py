@@ -113,7 +113,10 @@ class MqttConnection(MQTTClient):
         returns `False`.
         """
         if self.sock is None:
-            self.connect()
+            try:
+                self.connect()
+            except IndexError:
+                pass
 
         for retry in range(2):
             try:
@@ -145,7 +148,10 @@ class MqttConnection(MQTTClient):
         `True`. Otherwise, it returns `False`.
         """
         if self.sock is None:
-            self.connect()
+            try:
+                self.connect()
+            except IndexError:
+                pass
 
         for retry in range(2):
             try:
@@ -162,11 +168,15 @@ class MqttConnection(MQTTClient):
         Try to connect to the MQTT broker using an existing session. If no
         session is available, then a new session is created.
         """
-        if self.sock is None:
-            self.connect()
-        else:
-            self.sock.close()
-            self.connect(False)
+        try:
+            if self.sock is None:
+                self.connect()
+            else:
+                self.sock.close()
+                self.connect(False)
+        except IndexError:
+            # I really don't know why we are getting random index errors...
+            pass
 
     def publish(self, topic: bytes, msg, retain=False, qos=0):
         """Enqueue a new message to be transmitted later."""
@@ -193,23 +203,13 @@ class MqttConnection(MQTTClient):
             self.sync_lock.release()
     
     def __receive_loop(self):
+        """Listen for new messages from the broker."""
         try:
             while True:
                 self.sync_lock.acquire()
                 self.wifi.acquire()
                 try:
-                    if self.wifi.connect():
-                        if self.sock is None:
-                            self.connect()
-                        
-                        print("Checking for new messages")
-                        for retry in range(2):
-                            try:
-                                super().check_msg()
-                                break
-                            except OSError:
-                                if retry is 0:
-                                    self.__reconnect()
+                    self.__try_check_messages()
                 finally:
                     self.wifi.release()
                     self.sync_lock.release()
@@ -222,6 +222,26 @@ class MqttConnection(MQTTClient):
             sys.print_exception(e)
         finally:
             print("Goodbye")
+
+    def __try_check_messages(self):
+        """
+        Attempt to check the socket for messages, handling all exceptions that
+        might occur.
+        """
+        if self.wifi.connect():
+            if self.sock is None:
+                try:
+                    self.connect()
+                except IndexError:
+                    pass
+            
+            print("Checking for new messages")
+            for retry in range(2):
+                try:
+                    return super().check_msg()
+                except OSError:
+                    if retry is 0:
+                        self.__reconnect()
 
     def __on_receive(self, topic, msg):
         """Handle messages received from the MQTT broker."""

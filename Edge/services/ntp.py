@@ -1,5 +1,6 @@
 # Since the standard implementation is clearly broken, this is adapted from:
 # https://github.com/micropython/micropython/blob/master/ports/esp8266/modules/ntptime.py
+# We also made it more resilient to connection issues
 from connection import Wifi
 import _thread
 import socket
@@ -40,6 +41,7 @@ class Ntp:
                 finally:
                     self.wifi.release()
                     self.wifi.deactivate(False)
+                    print("Updated clock with NTP")
                     utime.sleep(60 * 60 * 24)
                 
                 # Retry in an hour
@@ -55,10 +57,16 @@ class Ntp:
         ntp_query[0] = 0x1B
         addr = socket.getaddrinfo(HOST, 123)[0][-1]
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
         try:
-            s.settimeout(1)
-            _ = s.sendto(ntp_query, addr)
-            msg = s.recv(48)
+            for _ in range(2):
+                try:
+                    s.settimeout(1)
+                    _ = s.sendto(ntp_query, addr)
+                    msg = s.recv(48)
+                    break
+                except OSError:
+                    pass
         finally:
             s.close()
 
