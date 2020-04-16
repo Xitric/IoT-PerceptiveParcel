@@ -32,7 +32,7 @@ class Thread:
         if self.id:
             raise RuntimeError("Thread already completed")
         self.active = True
-        self.id = _thread.start_new_thread(self.__start, [])
+        self.id = _thread.start_new_thread(self.__start, ())
     
     def __start(self):
         try:
@@ -70,8 +70,8 @@ class ReentrantLock:
         was acquired to prevent deadlocks.
 
         If the `wait` parameter is `0`, the lock is only acquired if it can be
-        done without waiting. If it is `1` (default), the lock thread will wait
-        if necessary.
+        done without waiting. If it is `1` (default), the thread will wait if
+        necessary.
 
         If the `timeout` parameter is positive, it specifies how long, in
         seconds, the thread will wait for the lock. If it is `-1` (default),

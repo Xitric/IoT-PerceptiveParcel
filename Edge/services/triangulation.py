@@ -1,5 +1,5 @@
 import utime
-import _thread
+from thread import Thread
 from connection import MessagingService, Wifi, MqttConnection
 import ujson
 import ubinascii
@@ -49,10 +49,9 @@ class Triangulation:
         self.wifi = wifi
         self.mqtt = mqtt
         self.messaging = messaging
+        self.thread = Thread(self.__run, "LocationThread")
 
         self.previous_snapshot = []
-
-        self.thread = _thread.start_new_thread(self.__run, ())
     
     def start(self):
         self.thread.start()
@@ -64,37 +63,31 @@ class Triangulation:
                     return False
         return True
 
-    def __run(self):
-        try:
-            while True:
-                # We cannot scan if we are connected to an access point
-                self.wifi.disconnect()
-                self.wifi.acquire()
+    def __run(self, thread: Thread):
+        while thread.active:
+            # We cannot scan if we are connected to an access point
+            self.wifi.disconnect()
+            self.wifi.acquire()
 
-                try:
-                    stations = self.wifi.scan()
-                    print("Got {}".format(stations))
-                finally:
-                    self.wifi.release()
-                    self.wifi.deactivate(False)
+            try:
+                stations = self.wifi.scan()
+                print("Got {}".format(stations))
+            finally:
+                self.wifi.release()
+                self.wifi.deactivate(False)
 
-                for station in stations:
-                    # Filter out mobile network used while testing
-                    if station[0] != b"AndroidAP":
-                        self.table.add(ubinascii.hexlify(station[1]), station[3])
-                self.table.clean_table()
+            for station in stations:
+                # Filter out mobile network used while testing
+                if station[0] != b"AndroidAP":
+                    self.table.add(ubinascii.hexlify(station[1]), station[3])
+            self.table.clean_table()
 
-                new_snapshot = self.table.snapshot(3)
+            new_snapshot = self.table.snapshot(2)
 
-                if len(stations) >= 2 and self.__unique_sets(new_snapshot, self.previous_snapshot):
-                    self.previous_snapshot = new_snapshot
-                    payload = ujson.dumps(self.previous_snapshot)
-                    self.mqtt.publish('hcklI67o/package/123/maclocation', payload)
-                    self.messaging.notify()
+            if len(stations) >= 2 and self.__unique_sets(new_snapshot, self.previous_snapshot):
+                self.previous_snapshot = new_snapshot
+                payload = ujson.dumps(self.previous_snapshot)
+                self.mqtt.publish('hcklI67o/package/pkg123/maclocation', payload)
+                self.messaging.notify()
 
-                utime.sleep(30)
-
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except BaseException as e:
-            sys.print_exception(e)
+            utime.sleep(27)

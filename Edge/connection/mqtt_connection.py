@@ -2,7 +2,7 @@ from connection import Wifi, MQTTClient
 import ubinascii
 import machine
 import os
-import _thread
+from thread import Thread, ReentrantLock
 import utime
 import sys
 
@@ -24,14 +24,14 @@ class MqttConnection(MQTTClient):
     def __init__(self, broker: str, wifi: Wifi):
         super().__init__(ubinascii.hexlify(machine.unique_id()), broker)
         self.wifi = wifi
+        self.thread = Thread(self.__receive_loop, "MqttThread")
+        self.thread.start()
 
         self._subscribers = {}
         self._pending_subscriptions = []
         super().set_callback(self.__on_receive)
 
-        self.sync_lock = _thread.allocate_lock()
-
-        self.thread = _thread.start_new_thread(self.__receive_loop, ())
+        self.sync_lock = ReentrantLock()
 
     def has_pending_messages(self):
         """
@@ -202,26 +202,18 @@ class MqttConnection(MQTTClient):
         finally:
             self.sync_lock.release()
     
-    def __receive_loop(self):
-        """Listen for new messages from the broker."""
-        try:
-            while True:
-                self.sync_lock.acquire()
-                self.wifi.acquire()
-                try:
-                    self.__try_check_messages()
-                finally:
-                    self.wifi.release()
-                    self.sync_lock.release()
-                    self.wifi.deactivate(False)
-                    utime.sleep(30)
-        
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except BaseException as e:
-            sys.print_exception(e)
-        finally:
-            print("Goodbye")
+    def __receive_loop(self, thread: Thread):
+        """Listens for new messages from the broker."""
+        while thread.active:
+            self.sync_lock.acquire()
+            self.wifi.acquire()
+            try:
+                self.__try_check_messages()
+            finally:
+                self.wifi.release()
+                self.sync_lock.release()
+                self.wifi.deactivate(False)
+                utime.sleep(30)
 
     def __try_check_messages(self):
         """

@@ -1,8 +1,9 @@
 # Since the standard implementation is clearly broken, this is adapted from:
 # https://github.com/micropython/micropython/blob/master/ports/esp8266/modules/ntptime.py
-# We also made it more resilient to connection issues
+# We also made it more resilient to connection issues, and converted it into a
+# background service
 from connection import Wifi
-import _thread
+from thread import Thread
 import socket
 import struct
 import utime
@@ -21,36 +22,31 @@ class Ntp:
 
     def __init__(self, wifi: Wifi):
         self.wifi = wifi
-        self.thread = _thread.start_new_thread(self.__run, ())
+        self.thread = Thread(self.__run, "NtpThread")
 
     def start(self):
         self.thread.start()
     
-    def __run(self):
-        try:
-            while True:
-                self.wifi.acquire()
-                try:
-                    if self.wifi.connect():
-                        utime.sleep(5)  # Sometimes it fails if we are too fast?
-                        self.__settime()
-                        continue
-                except IndexError:
-                    # TODO: I have no idea why this happens sometimes
-                    pass
-                finally:
-                    self.wifi.release()
-                    self.wifi.deactivate(False)
+    def __run(self, thread: Thread):
+        while thread.active:
+            self.wifi.acquire()
+            try:
+                if self.wifi.connect():
+                    utime.sleep(5)  # Sometimes it fails if we are too fast?
+                    self.__settime()
                     print("Updated clock with NTP")
-                    utime.sleep(60 * 60 * 24)
-                
-                # Retry in an hour
-                utime.sleep(60 * 60)
-
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except BaseException as e:
-            sys.print_exception(e)
+                    continue
+            except IndexError:
+                # TODO: I have no idea why this happens sometimes
+                print("Failed to update clock")
+                pass
+            finally:
+                self.wifi.release()
+                self.wifi.deactivate(False)
+                utime.sleep(60 * 60 * 24)
+            
+            # Retry in an hour
+            utime.sleep(60 * 60)
     
     def __time(self):
         ntp_query = bytearray(48)

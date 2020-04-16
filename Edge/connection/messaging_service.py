@@ -1,4 +1,5 @@
 from connection import Wifi
+from thread import Thread, ReentrantLock
 import _thread
 import sys
 
@@ -25,14 +26,16 @@ class MessagingService:
     def __init__(self, wifi: Wifi):
         self.wifi = wifi
         self.channels = []
+        self.thread = Thread(self.__messaging_loop, "MessageThread")
         
         # Semaphore for signaling the messaging service
         self._message_semaphore = _thread.allocate_lock()
 
         # Lock for protecting critical regions
-        self._sync_lock = _thread.allocate_lock()
-
-        self.thread = _thread.start_new_thread(self.__messaging_loop, ())
+        self._sync_lock = ReentrantLock()
+    
+    def start(self):
+        self.thread.start()
 
     def notify(self):
         """
@@ -45,41 +48,34 @@ class MessagingService:
         if self._message_semaphore.locked():
             self._message_semaphore.release()
 
-    def __messaging_loop(self):
+    def __messaging_loop(self, thread: Thread):
         # This exception handling is necessary in order for background threads
         # to be affected by keyboard interrupts and to print stack traces in
         # case of exceptions.
-        try:
-            while True:
-                # There is no concept of a thread holding a lock with this
-                # library. A lock is either locked or unlocked, and if the same
-                # thread attempts to acquire the same lock twice, it will block
-                # itself until someone else calls release on the lock.
+        while thread.active:
+            # There is no concept of a thread holding a lock with the _thread
+            # library. A lock is either locked or unlocked, and if the same
+            # thread attempts to acquire the same lock twice, it will block
+            # itself until someone else calls release on the lock.
 
-                if self.__has_pending_messages():
-                    # While there are pending messages, retry every ten minutes
-                    self._message_semaphore.acquire(1, 10 * 60)
-                else:
-                    # Otherwise wait for an explicit signal
-                    self._message_semaphore.acquire()
-                
-                self._sync_lock.acquire()
+            if self.__has_pending_messages():
+                # While there are pending messages, retry every ten minutes
+                self._message_semaphore.acquire(1, 10 * 60)
+            else:
+                # Otherwise wait for an explicit signal
+                self._message_semaphore.acquire()
+            
+            self._sync_lock.acquire()
+            try:
+                if not self.__has_pending_messages():
+                    continue
 
-                try:
-                    if not self.__has_pending_messages():
-                        continue
-
-                    for channel in self.channels:
-                        channel.transmit()
-                finally:
-                    # In case Wifi was enabled, deactivate it now to save energy
-                    self.wifi.deactivate()
-                    self._sync_lock.release()
-        
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except BaseException as e:
-            sys.print_exception(e)
+                for channel in self.channels:
+                    channel.transmit()
+            finally:
+                # In case Wifi was enabled, deactivate it now to save energy
+                self.wifi.deactivate()
+                self._sync_lock.release()
     
     def __has_pending_messages(self) -> bool:
         """Check if any channels have pending messages. Not thread safe."""
@@ -88,7 +84,6 @@ class MessagingService:
                 return True
         return False
 
-    # TODO: Handle input, especially over MQTT
     def add_channel(self, channel):
         """
         Add a new object to be used for transmitting messages out of the

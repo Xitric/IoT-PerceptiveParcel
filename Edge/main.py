@@ -6,10 +6,14 @@ mqtt = MqttConnection("broker.hivemq.com", wifi)
 
 messaging_service = MessagingService(wifi)
 messaging_service.add_channel(mqtt)
+messaging_service.start()
 
 ntp_service = Ntp(wifi)
 environment_service = EnvironmentMonitor(wifi, mqtt, messaging_service)
 triangulation_service = Triangulation(wifi, mqtt, messaging_service)
+ntp_service.start()
+environment_service.start()
+triangulation_service.start()
 
 # OLED, width (128) might be incorrect
 # from machine import I2C, Pin
