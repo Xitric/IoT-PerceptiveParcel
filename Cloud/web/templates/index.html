@@ -1,17 +1,15 @@
-<html>
-    <head>
-        <title>Track and Trace</title>
-        <link rel="stylesheet" type="text/css" href="/css/styles.css">
-        <script src="/js/welcome.js"></script>
-    </head>
-    <body>
-        <h1>Track & Trace</h1>
-        <p>Here you can track your package by inserting your package id below.</p>
-        <!--<p>Welcome to {{ key1 }} {{ key2 }}</p>-->
-        <form action="/map" method="get">
-            <label for="packid">Package ID:</label><br>
-            <input type="text" id="packid" name="packid"><br>
-            <input type="submit" value="Submit">
-        </form>
-    </body>
-</html>
+{% extends "layout.html" %}
+{% block title %}Track and Trace{% endblock %}
+{% block head %}
+    {{ super() }}
+    <script src="/js/welcome.js"></script>
+{% endblock %}
+{% block body %}
+    <h1>Track & Trace</h1>
+    <p>Here you can track your package by inserting your package id below.</p>
+    <form action="/map" method="get">
+        <label for="packid">Package ID:</label><br>
+        <input type="text" id="packid" name="packid"><br>
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}

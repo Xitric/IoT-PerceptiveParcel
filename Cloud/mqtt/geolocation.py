@@ -11,7 +11,7 @@ def coordinates_from_mac(stations: [Tuple[str, int]]):
     scans. The array must contain tuples of MAC addresses and signal strengths
     for a given scan.
     """
-    url = '{}?key={}'.format(BASE_URL, os.environ['API_KEY_GEOLOCATION'])
+    url = '{}?key={}'.format(BASE_URL, os.environ['PP_API_KEY_GEOLOCATION'])
     payload = __make_request_body(stations)
     headers = {'Connection': 'close'}
 
@@ -24,7 +24,6 @@ def __handle_response(response: requests.Response):
         json = response.json()
         if json:
             return (json['location']['lat'], json['location']['lng'], json['accuracy'])
-    print('{}: {}'.format(response.status_code, response.reason))
     return None
 
 

@@ -6,3 +6,4 @@
 *.pyi
 __pycache__
 .DS_Store
+run.sh

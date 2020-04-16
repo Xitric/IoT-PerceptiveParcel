@@ -1,9 +1,9 @@
-import time
 import paho.mqtt.client as paho
+from mqtt import geolocation
+from repository import db_context
+import time
 import json
 import re
-import mqtt.geolocation as geo
-import database.db_context as db_context
 
 # Topics for pushing setpoint values
 TOPIC_MOTION_SETPOINT = 'hcklI67o/package/{}/setpoint/motion'
@@ -20,6 +20,7 @@ TOPIC_MACLOCATION_PUBLISH = 'hcklI67o/package/+/maclocation'
 TOPIC_COORDINATES_PUBLISH = 'hcklI67o/package/{}/coordinates'
 TOPIC_PACKAGEID_PUBLISH = 'hcklI67o/device/{}/package'
 
+MILLENNIUM_SECONDS = 946681200
 
 class MqttService:
     """
@@ -86,16 +87,13 @@ class MqttService:
     def __handle_mac_scan(self, package_id, stations_payload):
         json_stations = json.loads(stations_payload.decode())
         if len(json_stations) < 2:
-            print("Too few, baah")
             return
 
         stations = [(self.__to_mac_address(station[0]), station[1]) for station in json_stations]
-        time = json_stations[0][2]
-        coordinates = geo.coordinates_from_mac(stations)
+        time = json_stations[0][2] + MILLENNIUM_SECONDS
+        coordinates = geolocation.coordinates_from_mac(stations)
 
         if coordinates:
-            print('{}: {}'.format(time, coordinates))
-
             # save location in db
             db_context.insert_location(package_id=package_id, timestamp=time, latitude=coordinates[0],
                                        longitude=coordinates[1],
@@ -115,8 +113,6 @@ class MqttService:
         temperature = json.loads(temperature_payload.decode())
 
         if temperature:
-            print("Exceeding temperature: {}".format(temperature))
-
             # TODO: TIME
             # save temperature in db
             db_context.insert_temperature_exceeding(package_id=package_id, timestamp=123, temperature=temperature)
@@ -125,8 +121,6 @@ class MqttService:
         humidity = json.loads(humidity_payload.decode())
 
         if humidity:
-            print("Exceeding humitidy: {}".format(humidity))
-
             # TODO: TIME
             # save humidity in db
             db_context.insert_humidity_exceeding(package_id=package_id, timestamp=123, humidity=humidity)
@@ -139,10 +133,3 @@ class MqttService:
 
     def set_humidity_setpoint(self, package_id, setpoint):
         self.client.publish(TOPIC_HUMIDITY_SETPOINT.format(package_id), setpoint, qos=1, retain=True)
-
-
-
-if __name__ == '__main__':
-    mqtt = MqttService()
-    mqtt.start()
-    time.sleep(3600)
