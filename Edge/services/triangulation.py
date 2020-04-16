@@ -5,19 +5,6 @@ import ujson
 import ubinascii
 import sys
 
-# TODO
-from drivers import display
-from machine import Pin, PWM
-
-BUZ_IO27 = 27
-buzzer = Pin(BUZ_IO27, Pin.OUT)
-delay = 12
-
-def beep(tone=440):
-    beeper = PWM(buzzer, freq=tone, duty=512)
-    utime.sleep_ms(500)
-    beeper.deinit()
-
 class RssiTable:
     """
     A class for keeping track of access points detected within the last minute.
@@ -92,20 +79,18 @@ class Triangulation:
                     self.wifi.deactivate(False)
 
                 for station in stations:
-                    if station[0] == b"AndroidAP":
-                        continue
-                    self.table.add(ubinascii.hexlify(station[1]), station[3])
+                    # Filter out mobile network used while testing
+                    if station[0] != b"AndroidAP":
+                        self.table.add(ubinascii.hexlify(station[1]), station[3])
                 self.table.clean_table()
 
                 new_snapshot = self.table.snapshot(3)
-                display([station[0] for station in new_snapshot])
 
                 if len(stations) >= 2 and self.__unique_sets(new_snapshot, self.previous_snapshot):
                     self.previous_snapshot = new_snapshot
                     payload = ujson.dumps(self.previous_snapshot)
                     self.mqtt.publish('hcklI67o/package/123/maclocation', payload)
                     self.messaging.notify()
-                    beep()
 
                 utime.sleep(30)
 
