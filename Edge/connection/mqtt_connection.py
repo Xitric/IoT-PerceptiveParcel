@@ -118,13 +118,13 @@ class MqttConnection(MQTTClient):
             except IndexError:
                 pass
 
-        for retry in range(2):
+        for retry in range(5):
             try:
                 super().publish(topic, msg, retain, qos)
                 print("Successfully published {}".format(msg))
                 return True
             except OSError:
-                if retry is 0:
+                if retry is not 4:
                     self.__reconnect()
         return False
 
@@ -153,13 +153,13 @@ class MqttConnection(MQTTClient):
             except IndexError:
                 pass
 
-        for retry in range(2):
+        for retry in range(5):
             try:
                 super().subscribe(topic, qos)
                 print("Successfully subscribed to {}".format(topic))
                 return True
             except OSError:
-                if retry is 0:
+                if retry is not 4:
                     self.__reconnect()
         return False
 
@@ -174,7 +174,7 @@ class MqttConnection(MQTTClient):
             else:
                 self.sock.close()
                 self.connect(False)
-        except IndexError:
+        except (OSError, IndexError):
             # I really don't know why we are getting random index errors...
             pass
 
@@ -199,6 +199,7 @@ class MqttConnection(MQTTClient):
                 self._subscribers[topic] = [callback]
             
             self._pending_subscriptions.append((topic, qos))
+            print("Buffered subscription {}".format(topic))
         finally:
             self.sync_lock.release()
     
@@ -228,11 +229,11 @@ class MqttConnection(MQTTClient):
                     pass
             
             print("Checking for new messages")
-            for retry in range(2):
+            for retry in range(5):
                 try:
                     return super().check_msg()
                 except OSError:
-                    if retry is 0:
+                    if retry is not 4:
                         self.__reconnect()
 
     def __on_receive(self, topic, msg):

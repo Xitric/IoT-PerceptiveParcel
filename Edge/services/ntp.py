@@ -55,7 +55,7 @@ class Ntp:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         try:
-            for _ in range(2):
+            for _ in range(5):
                 try:
                     s.settimeout(1)
                     _ = s.sendto(ntp_query, addr)
