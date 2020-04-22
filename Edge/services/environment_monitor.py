@@ -1,11 +1,10 @@
 from thread import Thread
-from drivers import HTS221, MPU6050
+from drivers import HTS221
 from machine import Pin, I2C
 from connection import MessagingService, Wifi, MqttConnection
 import ubinascii
 import machine
 import utime
-import sys
 
 TOPIC_DEVICE_PACKAGE = 'hcklI67o/device/{}/package'
 TOPIC_TEMPERATURE_SETPOINT = 'hcklI67o/package/{}/setpoint/temperature'
@@ -30,8 +29,7 @@ class EnvironmentMonitor:
         self.temperature_setpoint = None
         self.humidity_setpoint = None
 
-        self.th_sensor = HTS221(I2C(-1, Pin(26, Pin.IN), Pin(25, Pin.OUT)))
-        self.motion_sensor = MPU6050(I2C(-1, Pin(26, Pin.IN), Pin(25, Pin.OUT)))
+        self.sensor = HTS221(I2C(-1, Pin(26, Pin.IN), Pin(25, Pin.OUT)))
 
     def start(self):
         self.thread.start()
@@ -63,7 +61,7 @@ class EnvironmentMonitor:
             utime.sleep(10)  # Reduce energy footprint?
 
     def __check_temperature(self) -> bool:
-        temperature = self.th_sensor.read_temp()
+        temperature = self.sensor.read_temp()
         print("Read temperature: {}".format(temperature))
 
         if temperature > self.temperature_setpoint:
@@ -72,17 +70,13 @@ class EnvironmentMonitor:
         return False
 
     def __check_humidity(self) -> bool:
-        humidity = self.th_sensor.read_humi()
+        humidity = self.sensor.read_humi()
         print("Read humidity: {}".format(humidity))
 
         if humidity > self.humidity_setpoint:
             self.mqtt.publish(TOPIC_HUMIDITY_PUBLISH.format(self.messaging.package_id), humidity, qos=1)
             return True
         return False
-
-    def __check_motion(self):
-        values = self.motion_sensor.get_values()
-        print(values)
 
     def _on_package_id(self, topic, msg):
         print('Received package id {}'.format(msg))
