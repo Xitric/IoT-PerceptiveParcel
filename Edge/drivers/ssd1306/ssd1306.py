@@ -44,6 +44,8 @@ class SSD1306(framebuf.FrameBuffer):
         self.external_vcc = external_vcc
         self.pages = self.height // 8
         self.buffer = bytearray(self.pages * self.width)
+        self.lines = [""] * 4
+        self.line_ptr = 0
         super().__init__(self.buffer, self.width, self.height, framebuf.MONO_VLSB)
         self.init_display()
 
@@ -110,6 +112,15 @@ class SSD1306(framebuf.FrameBuffer):
         self.fill(0)
         for i, line in enumerate(lines):
             self.text(line, 0, i * 8)
+        self.show()
+    
+    def push_line(self, line: str):
+        self.lines[self.line_ptr] = line
+        self.line_ptr = (self.line_ptr + 1) % len(self.lines)
+        self.fill(0)
+        for i in range(len(self.lines)):
+            j = (self.line_ptr - i - 1) % len(self.lines)
+            self.text(self.lines[j], 0, i * 8)
         self.show()
 
 class SSD1306_I2C(SSD1306):

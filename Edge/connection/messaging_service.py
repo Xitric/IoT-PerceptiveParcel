@@ -27,9 +27,10 @@ class MessagingService:
     transmission.
     """
 
-    def __init__(self, wifi: Wifi):
+    def __init__(self, wifi: Wifi, oled):
         self.wifi = wifi
         self.channels = []
+        self.oled = oled
         self.thread = Thread(self.__messaging_loop, "MessageThread")
         
         # TODO: Generalize and store setpoint values too?
@@ -37,6 +38,7 @@ class MessagingService:
         if CONFIG_FILE in os.listdir():
             config = self.__read_config()
             self.package_id = config["package_id"]
+            self.oled.push_line("ID: {}".format(self.package_id))
         else:
             self.package_id = None
         

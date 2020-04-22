@@ -46,12 +46,13 @@ class Triangulation:
     nearby Wifi access points.
     """
 
-    def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService):
+    def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService, oled):
         self.table = RssiTable()
         self.wifi = wifi
         self.mqtt = mqtt
         self.messaging = messaging
         self.thread = Thread(self.__run, "LocationThread")
+        self.oled = oled
 
         self.previous_snapshot = []
     
@@ -92,5 +93,7 @@ class Triangulation:
                     payload = ujson.dumps(self.previous_snapshot)
                     self.mqtt.publish(TOPIC_MACLOCATION_PUBLISH.format(self.messaging.package_id), payload)
                     self.messaging.notify()
+                    self.oled.push_line("Got location")
 
             utime.sleep(27)
+            

@@ -21,9 +21,10 @@ class MqttConnection(MQTTClient):
     in-memory.
     """
 
-    def __init__(self, broker: str, wifi: Wifi):
+    def __init__(self, broker: str, wifi: Wifi, oled):
         super().__init__(ubinascii.hexlify(machine.unique_id()), broker)
         self.wifi = wifi
+        self.oled = oled
         self.thread = Thread(self.__receive_loop, "MqttThread")
         self.thread.start()
 
@@ -122,6 +123,7 @@ class MqttConnection(MQTTClient):
             try:
                 super().publish(topic, msg, retain, qos)
                 print("Successfully published {}".format(msg))
+                self.oled.push_line("Sent message")
                 return True
             except OSError:
                 if retry is not 4:
@@ -157,6 +159,7 @@ class MqttConnection(MQTTClient):
             try:
                 super().subscribe(topic, qos)
                 print("Successfully subscribed to {}".format(topic))
+                self.oled.push_line("Subscribed")
                 return True
             except OSError:
                 if retry is not 4:

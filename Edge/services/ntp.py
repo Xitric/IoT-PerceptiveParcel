@@ -20,8 +20,9 @@ class Ntp:
     every hour.
     """
 
-    def __init__(self, wifi: Wifi):
+    def __init__(self, wifi: Wifi, oled):
         self.wifi = wifi
+        self.oled = oled
         self.thread = Thread(self.__run, "NtpThread")
 
     def start(self):
@@ -35,6 +36,7 @@ class Ntp:
                     utime.sleep(5)  # Sometimes it fails if we are too fast?
                     self.__settime()
                     print("Updated clock with NTP")
+                    self.oled.push_line("Updated clock")
                     continue
             except IndexError:
                 # TODO: I have no idea why this happens sometimes
