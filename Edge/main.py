@@ -1,5 +1,5 @@
 from connection import MessagingService, Wifi, MqttConnection
-from services import Ntp, EnvironmentMonitor, Triangulation
+from services import Ntp, EnvironmentMonitor, MotionMonitor, Triangulation
 from drivers import SSD1306_I2C
 from machine import I2C, Pin
 
@@ -16,7 +16,9 @@ messaging_service.start()
 
 ntp_service = Ntp(wifi, oled)
 environment_service = EnvironmentMonitor(wifi, mqtt, messaging_service, oled)
+motion_service = MotionMonitor(wifi, mqtt, messaging_service, oled)
 triangulation_service = Triangulation(wifi, mqtt, messaging_service, oled)
 ntp_service.start()
 environment_service.start()
+motion_service.start()
 triangulation_service.start()
