@@ -7,8 +7,10 @@ from connection import MessagingService, Wifi, MqttConnection
 import ubinascii
 import machine
 import utime
+import sys
 
 TOPIC_DEVICE_PACKAGE = 'hcklI67o/device/{}/package'
+
 
 class MotionMonitor:
     def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService, oled):
@@ -61,7 +63,8 @@ class MotionMonitor:
         x = values['AcX']
 
         shake = math.fabs(z + y + x - self.last_z - self.last_y - self.last_x)
-        print("The shake: " + str(shake))
+        if shake > 25000:
+            print("The shake: " + str(shake))
         # print(self.last_z)
         self.last_z = z
         self.last_y = y
