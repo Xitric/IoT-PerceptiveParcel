@@ -10,6 +10,7 @@ import utime
 import sys
 
 TOPIC_DEVICE_PACKAGE = 'hcklI67o/device/{}/package'
+TOPIC_SHAKE_PUBLISH = 'hcklI67o/package/{}/shake'
 
 
 class MotionMonitor:
@@ -45,7 +46,7 @@ class MotionMonitor:
                 print("Notified messaging service of pending data")
                 self.messaging.notify()
 
-            utime.sleep_ms(100)  # Reduce energy footprint?
+            utime.sleep_ms(100)
 
     def _on_package_id(self, topic, msg):
         print('Received package id {}'.format(msg))
@@ -54,8 +55,8 @@ class MotionMonitor:
         # TODO: Unsubscribe from old id - umqttsimple does not support this!
         self.messaging.notify()
 
-    def __check_motion(self):
-        # {'GyZ': -213, 'GyY': 203, 'GyX': -151, 'Tmp': 27.73, 'AcZ': 16312, 'AcY': 620, 'AcX': -1116}
+    def __check_motion(self) -> bool:
+        # E.g. {'GyZ': -213, 'GyY': 203, 'GyX': -151, 'Tmp': 27.73, 'AcZ': 16312, 'AcY': 620, 'AcX': -1116}
         values = self.motion_sensor.get_values()
 
         z = values['AcZ']
@@ -63,12 +64,14 @@ class MotionMonitor:
         x = values['AcX']
 
         shake = math.fabs(z + y + x - self.last_z - self.last_y - self.last_x)
-        if shake > 25000:
-            print("The shake: " + str(shake))
-        # print(self.last_z)
+
         self.last_z = z
         self.last_y = y
         self.last_x = x
-        # print(values['AcZ'])
 
-        # print(values)
+        if shake > 20000:
+            print("The shake: " + str(shake))
+            self.mqtt.publish(TOPIC_SHAKE_PUBLISH.format(self.messaging.package_id), shake, qos=1)
+            return True
+
+        return False
