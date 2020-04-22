@@ -5,6 +5,7 @@ from connection import MessagingService, Wifi, MqttConnection
 import ubinascii
 import machine
 import utime
+import sys
 
 TOPIC_DEVICE_PACKAGE = 'hcklI67o/device/{}/package'
 TOPIC_TEMPERATURE_SETPOINT = 'hcklI67o/package/{}/setpoint/temperature'
@@ -54,9 +55,6 @@ class EnvironmentMonitor:
                 # TODO: Move to budget manager
                 print("Notified messaging service of pending data")
                 self.messaging.notify()
-
-            print("Called")
-            self.__check_motion()
 
             utime.sleep(10)  # Reduce energy footprint?
 
