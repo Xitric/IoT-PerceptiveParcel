@@ -2,7 +2,7 @@ from connection import Wifi, MQTTClient
 import ubinascii
 import machine
 import os
-import _thread
+from thread import Thread, ReentrantLock
 import utime
 import sys
 
@@ -21,17 +21,18 @@ class MqttConnection(MQTTClient):
     in-memory.
     """
 
-    def __init__(self, broker: str, wifi: Wifi):
+    def __init__(self, broker: str, wifi: Wifi, oled):
         super().__init__(ubinascii.hexlify(machine.unique_id()), broker)
         self.wifi = wifi
+        self.oled = oled
+        self.thread = Thread(self.__receive_loop, "MqttThread")
+        self.thread.start()
 
         self._subscribers = {}
         self._pending_subscriptions = []
         super().set_callback(self.__on_receive)
 
-        self.sync_lock = _thread.allocate_lock()
-
-        self.thread = _thread.start_new_thread(self.__receive_loop, ())
+        self.sync_lock = ReentrantLock()
 
     def has_pending_messages(self):
         """
@@ -118,13 +119,14 @@ class MqttConnection(MQTTClient):
             except IndexError:
                 pass
 
-        for retry in range(2):
+        for retry in range(5):
             try:
                 super().publish(topic, msg, retain, qos)
                 print("Successfully published {}".format(msg))
+                self.oled.push_line("Sent message")
                 return True
             except OSError:
-                if retry is 0:
+                if retry is not 4:
                     self.__reconnect()
         return False
 
@@ -153,13 +155,14 @@ class MqttConnection(MQTTClient):
             except IndexError:
                 pass
 
-        for retry in range(2):
+        for retry in range(5):
             try:
                 super().subscribe(topic, qos)
                 print("Successfully subscribed to {}".format(topic))
+                self.oled.push_line("Subscribed")
                 return True
             except OSError:
-                if retry is 0:
+                if retry is not 4:
                     self.__reconnect()
         return False
 
@@ -174,7 +177,7 @@ class MqttConnection(MQTTClient):
             else:
                 self.sock.close()
                 self.connect(False)
-        except IndexError:
+        except (OSError, IndexError):
             # I really don't know why we are getting random index errors...
             pass
 
@@ -199,29 +202,22 @@ class MqttConnection(MQTTClient):
                 self._subscribers[topic] = [callback]
             
             self._pending_subscriptions.append((topic, qos))
+            print("Buffered subscription {}".format(topic))
         finally:
             self.sync_lock.release()
     
-    def __receive_loop(self):
-        """Listen for new messages from the broker."""
-        try:
-            while True:
-                self.sync_lock.acquire()
-                self.wifi.acquire()
-                try:
-                    self.__try_check_messages()
-                finally:
-                    self.wifi.release()
-                    self.sync_lock.release()
-                    self.wifi.deactivate(False)
-                    utime.sleep(30)
-        
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except BaseException as e:
-            sys.print_exception(e)
-        finally:
-            print("Goodbye")
+    def __receive_loop(self, thread: Thread):
+        """Listens for new messages from the broker."""
+        while thread.active:
+            self.sync_lock.acquire()
+            self.wifi.acquire()
+            try:
+                self.__try_check_messages()
+            finally:
+                self.wifi.release()
+                self.sync_lock.release()
+                self.wifi.deactivate(False)
+                utime.sleep(30)
 
     def __try_check_messages(self):
         """
@@ -236,11 +232,11 @@ class MqttConnection(MQTTClient):
                     pass
             
             print("Checking for new messages")
-            for retry in range(2):
+            for retry in range(5):
                 try:
                     return super().check_msg()
                 except OSError:
-                    if retry is 0:
+                    if retry is not 4:
                         self.__reconnect()
 
     def __on_receive(self, topic, msg):

@@ -96,3 +96,24 @@ def insert_humidity_exceeding(package_id: str, timestamp: int, humidity: float):
             connection.close()
             cursor.close()
             print("Database connection closed")
+
+
+def insert_motion_exceeding(package_id: str, timestamp: int, motion: float):
+    try:
+        connection = __connect('location_db')
+
+        query = "INSERT INTO motion VALUES (%s,%s,%s)"
+        data = (package_id, timestamp, motion)
+
+        cursor = connection.cursor()
+        cursor.execute(query, data)
+        connection.commit()
+
+    except db.Error as e:
+        print("Error inserting motion", e)
+
+    finally:
+        if connection.is_connected():
+            connection.close()
+            cursor.close()
+            print("Database connection closed")

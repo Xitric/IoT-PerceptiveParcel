@@ -1,9 +1,11 @@
 import utime
-import _thread
+from thread import Thread
 from connection import MessagingService, Wifi, MqttConnection
 import ujson
 import ubinascii
 import sys
+
+TOPIC_MACLOCATION_PUBLISH = 'hcklI67o/package/{}/maclocation'
 
 class RssiTable:
     """
@@ -44,15 +46,15 @@ class Triangulation:
     nearby Wifi access points.
     """
 
-    def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService):
+    def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService, oled):
         self.table = RssiTable()
         self.wifi = wifi
         self.mqtt = mqtt
         self.messaging = messaging
+        self.thread = Thread(self.__run, "LocationThread")
+        self.oled = oled
 
         self.previous_snapshot = []
-
-        self.thread = _thread.start_new_thread(self.__run, ())
     
     def start(self):
         self.thread.start()
@@ -64,9 +66,9 @@ class Triangulation:
                     return False
         return True
 
-    def __run(self):
-        try:
-            while True:
+    def __run(self, thread: Thread):
+        while thread.active:
+            if self.messaging.package_id:
                 # We cannot scan if we are connected to an access point
                 self.wifi.disconnect()
                 self.wifi.acquire()
@@ -79,20 +81,19 @@ class Triangulation:
                     self.wifi.deactivate(False)
 
                 for station in stations:
-                    self.table.add(ubinascii.hexlify(station[1]), station[3])
+                    # Filter out mobile network used while testing
+                    if station[0] != b"AndroidAP":
+                        self.table.add(ubinascii.hexlify(station[1]), station[3])
                 self.table.clean_table()
 
-                new_snapshot = self.table.snapshot(3)
+                new_snapshot = self.table.snapshot(2)
 
-                if len(stations) > 2 and self.__unique_sets(new_snapshot, self.previous_snapshot):
+                if len(stations) >= 2 and self.__unique_sets(new_snapshot, self.previous_snapshot):
                     self.previous_snapshot = new_snapshot
                     payload = ujson.dumps(self.previous_snapshot)
-                    self.mqtt.publish('hcklI67o/package/123/maclocation', payload)
+                    self.mqtt.publish(TOPIC_MACLOCATION_PUBLISH.format(self.messaging.package_id), payload)
                     self.messaging.notify()
+                    self.oled.push_line("Got location")
 
-                utime.sleep(30)
-
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except BaseException as e:
-            sys.print_exception(e)
+            utime.sleep(27)
+            

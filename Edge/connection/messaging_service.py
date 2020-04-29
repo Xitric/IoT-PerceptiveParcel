@@ -1,6 +1,11 @@
 from connection import Wifi
+from thread import Thread, ReentrantLock
 import _thread
+import ujson
 import sys
+import os
+
+CONFIG_FILE = "config.json"
 
 class MessagingService:
     """
@@ -22,17 +27,29 @@ class MessagingService:
     transmission.
     """
 
-    def __init__(self, wifi: Wifi):
+    def __init__(self, wifi: Wifi, oled):
         self.wifi = wifi
         self.channels = []
+        self.oled = oled
+        self.thread = Thread(self.__messaging_loop, "MessageThread")
+        
+        # TODO: Generalize and store setpoint values too?
+        # Then we should extract it to a file like config.py
+        if CONFIG_FILE in os.listdir():
+            config = self.__read_config()
+            self.package_id = config["package_id"]
+            self.oled.push_line("ID: {}".format(self.package_id))
+        else:
+            self.package_id = None
         
         # Semaphore for signaling the messaging service
         self._message_semaphore = _thread.allocate_lock()
 
         # Lock for protecting critical regions
-        self._sync_lock = _thread.allocate_lock()
-
-        self.thread = _thread.start_new_thread(self.__messaging_loop, ())
+        self._sync_lock = ReentrantLock()
+    
+    def start(self):
+        self.thread.start()
 
     def notify(self):
         """
@@ -44,42 +61,52 @@ class MessagingService:
         """
         if self._message_semaphore.locked():
             self._message_semaphore.release()
+    
+    def set_package_id(self, package_id: str):
+        self.package_id = package_id
 
-    def __messaging_loop(self):
+        if not CONFIG_FILE in os.listdir():
+            config = {}
+        else:
+            config = self.__read_config()
+
+        config["package_id"] = package_id
+
+        with open(CONFIG_FILE, "w") as config_file:
+            config_file.write(ujson.dumps(config))
+    
+    def __read_config(self):
+        with open(CONFIG_FILE, "r") as config_file:
+            return ujson.loads("".join(config_file.readlines()))
+
+    def __messaging_loop(self, thread: Thread):
         # This exception handling is necessary in order for background threads
         # to be affected by keyboard interrupts and to print stack traces in
         # case of exceptions.
-        try:
-            while True:
-                # There is no concept of a thread holding a lock with this
-                # library. A lock is either locked or unlocked, and if the same
-                # thread attempts to acquire the same lock twice, it will block
-                # itself until someone else calls release on the lock.
+        while thread.active:
+            # There is no concept of a thread holding a lock with the _thread
+            # library. A lock is either locked or unlocked, and if the same
+            # thread attempts to acquire the same lock twice, it will block
+            # itself until someone else calls release on the lock.
 
-                if self.__has_pending_messages():
-                    # While there are pending messages, retry every ten minutes
-                    self._message_semaphore.acquire(1, 10 * 60)
-                else:
-                    # Otherwise wait for an explicit signal
-                    self._message_semaphore.acquire()
-                
-                self._sync_lock.acquire()
+            if self.__has_pending_messages():
+                # While there are pending messages, retry every ten minutes
+                self._message_semaphore.acquire(1, 10 * 60)
+            else:
+                # Otherwise wait for an explicit signal
+                self._message_semaphore.acquire()
+            
+            self._sync_lock.acquire()
+            try:
+                if not self.__has_pending_messages():
+                    continue
 
-                try:
-                    if not self.__has_pending_messages():
-                        continue
-
-                    for channel in self.channels:
-                        channel.transmit()
-                finally:
-                    # In case Wifi was enabled, deactivate it now to save energy
-                    self.wifi.deactivate()
-                    self._sync_lock.release()
-        
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except BaseException as e:
-            sys.print_exception(e)
+                for channel in self.channels:
+                    channel.transmit()
+            finally:
+                # In case Wifi was enabled, deactivate it now to save energy
+                self.wifi.deactivate()
+                self._sync_lock.release()
     
     def __has_pending_messages(self) -> bool:
         """Check if any channels have pending messages. Not thread safe."""
@@ -88,7 +115,6 @@ class MessagingService:
                 return True
         return False
 
-    # TODO: Handle input, especially over MQTT
     def add_channel(self, channel):
         """
         Add a new object to be used for transmitting messages out of the

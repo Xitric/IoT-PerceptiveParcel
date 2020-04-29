@@ -56,7 +56,7 @@ def __on_message(client, userdata, msg):
         return
 
     if __matches_topic(msg.topic, TOPIC_MOTION_PUBLISH):
-        pass  # TODO
+        __handle_motion_exceeding(package_id, msg.payload)
     elif __matches_topic(msg.topic, TOPIC_TEMPERATURE_PUBLISH):
         __handle_temperature_exceeding(package_id, msg.payload)
     elif __matches_topic(msg.topic, TOPIC_HUMIDITY_PUBLISH):
@@ -101,20 +101,35 @@ def __to_mac_address(string):
     return mac
 
 def __handle_temperature_exceeding(package_id, temperature_payload):
-    temperature = json.loads(temperature_payload.decode())
-
-    if temperature:
-        # TODO: TIME
-        # save temperature in db
-        db_context.insert_temperature_exceeding(package_id=package_id, timestamp=123, temperature=temperature)
+    time_temperature = json.loads(temperature_payload.decode())
+    print("Handle temperature " + str(time_temperature))
+    temperature = time_temperature["temperature"]
+    timestamp = time_temperature["time"]
+    if timestamp and temperature:
+        # save temperature with time in db
+        timestamp = timestamp + MILLENNIUM_SECONDS
+        db_context.insert_temperature_exceeding(package_id=package_id, timestamp=timestamp, temperature=temperature)
 
 def __handle_humidity_exceeding(package_id, humidity_payload):
-    humidity = json.loads(humidity_payload.decode())
+    time_humidity = json.loads(humidity_payload.decode())
+    print("Handle humidity " + str(time_humidity))
+    humidity = time_humidity["humidity"]
+    timestamp = time_humidity["time"]
+    if timestamp and humidity:
+        # save humidity with time in db
+        timestamp = timestamp + MILLENNIUM_SECONDS
+        db_context.insert_humidity_exceeding(package_id=package_id, timestamp=timestamp, humidity=humidity)
 
-    if humidity:
-        # TODO: TIME
-        # save humidity in db
-        db_context.insert_humidity_exceeding(package_id=package_id, timestamp=123, humidity=humidity)
+def __handle_motion_exceeding(package_id, motion_payload):
+    time_motion = json.loads(motion_payload.decode())
+    print("Handle motion " + str(time_motion))
+    motion = time_motion["motion"]
+    timestamp = time_motion["time"]
+
+    if timestamp and motion:
+        # save motion with time in db
+        timestamp = timestamp + MILLENNIUM_SECONDS
+        db_context.insert_motion_exceeding(package_id=package_id, timestamp=timestamp, motion=motion)
 
 def set_motion_setpoint(package_id, setpoint):
     client.publish(TOPIC_MOTION_SETPOINT.format(package_id), setpoint, qos=1, retain=True)

@@ -1,3 +1,3 @@
 from .triangulation import RssiTable, Triangulation
-from .environment_monitor import EnvironmentMonitor
+from .package_monitor import PackageMonitor
 from .ntp import Ntp
