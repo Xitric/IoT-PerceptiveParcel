@@ -8,24 +8,36 @@
 @prefix xml: <http://www.w3.org/XML/1998/namespace> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
+<https://github.com/Xitric/IoT-PerceptiveParcel#/device/dsjidjossd> a iotpp:Device ;
+    iotpp:deviceId "dsjidjossd"^^xsd:ID ;
+    iotpp:hasAPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/ab3dm23jhl43bfj> .
+
 <https://github.com/Xitric/IoT-PerceptiveParcel#/event/MotionViolation/1> a iotpp:MotionViolation ;
-    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> ;
+    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/ab3dm23jhl43bfj> ;
     iotpp:hasValue <https://github.com/Xitric/IoT-PerceptiveParcel#/eventvalue/1> ;
     iotpp:timestamp "2004-12-26T21:32:52"^^xsd:dateTime .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#/event/humitityViolation/1> a iotpp:HumitityViolation ;
-    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> ;
+    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/ab3dm23jhl43bfj> ;
     iotpp:hasValue <https://github.com/Xitric/IoT-PerceptiveParcel#/eventvalue/1> ;
     iotpp:timestamp "2003-12-26T21:32:52"^^xsd:dateTime .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#/event/temperatureViolation/1> a iotpp:TemperatureViolation ;
-    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> ;
+    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/ab3dm23jhl43bfj> ;
     iotpp:hasValue <https://github.com/Xitric/IoT-PerceptiveParcel#/eventvalue/1> ;
     iotpp:timestamp "2002-11-26T21:32:52"^^xsd:dateTime .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#/topic/1> a iotpp:Topic ;
     iotpp:hasEvent <https://github.com/Xitric/IoT-PerceptiveParcel#/event/1> ;
     iotpp:topicName "tempTooHigh"^^xsd:string .
+
+iotpp:deviceId rdfs:domain iotpp:Device ;
+    rdfs:range xsd:ID ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:hasAPackage rdfs:domain iotpp:Device ;
+    rdfs:range iotpp:Package ;
+    rdfs:subClassOf owl:ObjectProperty .
 
 iotpp:hasEvent rdfs:domain iotpp:Topic ;
     rdfs:range iotpp:Event ;
@@ -35,13 +47,21 @@ iotpp:hasPackage rdfs:domain iotpp:Event ;
     rdfs:range iotpp:Package ;
     rdfs:subClassOf owl:ObjectProperty .
 
-iotpp:hasSetPoint rdfs:domain iotpp:Package ;
+iotpp:hasPackageType rdfs:domain iotpp:Package ;
+    rdfs:range iotpp:PackageType ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasSetPoint rdfs:domain iotpp:PackageType ;
     rdfs:range iotpp:SetPoint ;
     rdfs:subClassOf owl:ObjectProperty .
 
 iotpp:hasValue rdfs:domain iotpp:Event ;
     rdfs:range iotpp:EventValue ;
     rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:identifier rdfs:domain iotpp:PackageType ;
+    rdfs:range xsd:string ;
+    rdfs:subClassOf owl:DatatypeProperty .
 
 iotpp:packageId rdfs:domain iotpp:Package ;
     rdfs:range xsd:ID ;
@@ -55,17 +75,30 @@ iotpp:topicName rdfs:domain iotpp:Topic ;
     rdfs:range xsd:string ;
     rdfs:subClassOf owl:DatatypeProperty .
 
+iotpp:value rdfs:domain iotpp:SetPoint ;
+    rdfs:range xsd:int ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
 <https://github.com/Xitric/IoT-PerceptiveParcel#/event/1> a iotpp:Event,
         iotpp:EventValue ;
-    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> ;
+    iotpp:hasPackage <https://github.com/Xitric/IoT-PerceptiveParcel#/package/ab3dm23jhl43bfj> ;
     iotpp:hasValue <https://github.com/Xitric/IoT-PerceptiveParcel#/eventvalue/1> ;
     iotpp:timestamp "2001-10-26T21:32:52"^^xsd:dateTime .
 
-<https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/humititySetPoint/1> a iotpp:HumititySetPoint .
+<https://github.com/Xitric/IoT-PerceptiveParcel#/humitity> a iotpp:HumititySetPoint ;
+    iotpp:value "60"^^xsd:int .
 
-<https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/motionSetPoint/1> a iotpp:MotionSetPoint .
+<https://github.com/Xitric/IoT-PerceptiveParcel#/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "100"^^xsd:int .
 
-<https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/temperaturSetPoint/1> a iotpp:TemperaturSetPoint .
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#/humitity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#/temperatur> ;
+    iotpp:identifier "letter"^^xsd:string .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/temperatur> a iotpp:TemperaturSetPoint ;
+    iotpp:value "23"^^xsd:int .
 
 iotpp:HumititySetPoint rdfs:subClassOf iotpp:SetPoint .
 
@@ -81,12 +114,14 @@ iotpp:TemperatureViolation rdfs:subClassOf iotpp:Event .
 
 iotpp:EventValue a owl:Class .
 
+iotpp:Device a owl:Class .
+
 iotpp:Topic a owl:Class .
 
-<https://github.com/Xitric/IoT-PerceptiveParcel#/package/1> a iotpp:Package ;
-    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/humititySetPoint/1>,
-        <https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/motionSetPoint/1>,
-        <https://github.com/Xitric/IoT-PerceptiveParcel#/setpoint/temperaturSetPoint/1> ;
+iotpp:PackageType a owl:Class .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/package/ab3dm23jhl43bfj> a iotpp:Package ;
+    iotpp:hasPackageType <https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype> ;
     iotpp:packageId "ab3dm23jhl43bfj"^^xsd:ID .
 
 iotpp:Package a owl:Class .

@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, abort
+from flask import Flask, render_template, request, redirect, url_for, abort
 from werkzeug.exceptions import NotFound
 from repository import db_context
+from web import package_manager
 import json
 
 app = Flask(__name__,
@@ -31,12 +32,19 @@ def showMap():
     return render_template("map.html", route=json.dumps(route_data))
 
 @app.route("/admin")
-def showAdmin():
+def admin():
     return render_template("admin.html")
+
+@app.route("/admin/newPackage")
+def newPackage():
+    device_id = request.args.get("deviceId")
+    package_type = request.args.get("packageType")
+    package_manager.assign_package(device_id, package_type)
+    return redirect(url_for('admin'))
 
 @app.errorhandler(404)
 def not_found(error: NotFound):
     return render_template('notfound.html', error=error), 404
 
-def start_flask():
+def start():
     app.run(debug=True)

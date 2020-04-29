@@ -2,7 +2,7 @@
 {% block title %}Admin panel{% endblock %}
 {% block body %}
     <h1>Assign new package to device</h1>
-    <form id="packageForm" action="/device/" onsubmit="formSubmit">
+    <form id="packageForm" action="/admin/newPackage" onsubmit="formSubmit">
         <label for="deviceId">Device ID:</label><br/>
         <input type="text" id="deviceId" name="deviceId"/><br/>
 
@@ -17,19 +17,4 @@
         </select><br/>
         <input type="submit"/>
     </form>
-
-    <script>
-        function formSubmit() {
-            let deviceIdField = document.getElementById("deviceId")
-            alert("Got it")
-            form.setAttribute("action", `/device/${deviceIdField.value}`)
-        }
-
-        // let form = document.getElementById("packageForm")
-        // let deviceIdField = document.getElementById("deviceId")
-        // form.onsubmit(() => {
-        //     alert("Got it")
-        //     form.setAttribute("action", `/device/${deviceIdField.value}`)
-        // })
-    </script>
 {% endblock %}

@@ -35,3 +35,4 @@ def model():
 def query(g, q):
     r = g.query(q)
     return list(map(lambda row: list(row), r))
+    
