@@ -139,6 +139,7 @@ class MqttService:
         if timestamp and motion:
             # save motion with time in db
             timestamp = timestamp + MILLENNIUM_SECONDS
+            db_context.insert_motion_exceeding(package_id=package_id, timestamp=timestamp, motion=motion)
 
     def set_motion_setpoint(self, package_id, setpoint):
         self.client.publish(TOPIC_MOTION_SETPOINT.format(package_id), setpoint, qos=1, retain=True)
