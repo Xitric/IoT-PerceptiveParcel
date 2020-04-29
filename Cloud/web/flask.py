@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, abort
 from werkzeug.exceptions import NotFound
 from repository import db_context
+from repository import ontology_context
 from web import package_manager
 import json
 
@@ -12,7 +13,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 @app.route(r"/")
 def index():
-    return render_template("index.html", key1="ESP32", key2="Wrover")
+    return render_template("index.html")
 
 @app.route("/map")
 def showMap():
@@ -33,7 +34,8 @@ def showMap():
 
 @app.route("/admin")
 def admin():
-    return render_template("admin.html")
+    package_types = ontology_context.get_package_types()
+    return render_template("admin.html", packageTypes=package_types)
 
 @app.route("/admin/newPackage")
 def newPackage():

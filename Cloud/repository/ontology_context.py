@@ -1,5 +1,5 @@
 from rdflib import Literal
-from wrapper import *
+from repository.wrapper import model, query, IOTPP, RDF, XSD
 
 # TODO: methods for querying and inserting into the ontology ttl file
 # TODO: host on local server?
@@ -10,42 +10,48 @@ from wrapper import *
 #   Device types and the data they generate
 #       Where this data is published (the topics)
 #   Setpoint values for package types
-
-# Kasper's ESP has machine id:
-#   30aea4ddc98c
 g = model()
 
 def _init():
-    packageId = 'ab3dm23jhl43bfj'
-    Package = IOTPP['/package/'+packageId]
+    insert_package_type('letter', 60, 10000, 23)
+    insert_package_type('clothing', 50, 20000, 23)
+    insert_package_type('glass', 80, 1000, 550)
+    insert_package_type('ceramics', 80, 2500, 600)
+    insert_package_type('electronics', 30, 8000, 45)
+    insert_package_type('food', 40, 3000, 5)
+    insert_package_type('animal', 80, 10000, 30)
+    insert_package_type('polar-animal', 80, 10000, 0)
 
-    PackageType = IOTPP['/packagetype']
-    package_identifier = "letter"
+    insert_device('30aea4ddc98c')  # Kasper
+    insert_device('30aea4dd02a8')  # Emil
+    g.serialize("repository/model.ttl", 'turtle')
 
-    temperaturSetPoint = IOTPP['/temperatur']
-    humititySetPoint = IOTPP['/humitity']
-    motionSetPoint = IOTPP['/motion']
+    # packageId = 'ab3dm23jhl43bfj'
+    # Package = IOTPP['/package/'+packageId]
 
-    temperaturValue = 23
-    humitityValue = 60
-    motionValue = 100
+    # g.add((Package, RDF.type, IOTPP.Package))
+    # g.add((Package, IOTPP.hasPackageType, IOTPP['/packagetype/letter']))
+    # g.add((Package, IOTPP.packageId, Literal(packageId,datatype=XSD.ID)))
 
-    g.add((Package, RDF.type, IOTPP.Package))
-    g.add((Package, IOTPP.hasPackageType, PackageType))
-    g.add((Package, IOTPP.packageId, Literal(packageId,datatype=XSD.ID)))
+def insert_package_type(package_type, humidity_value, motion_value, temperature_value):
+    PackageType = IOTPP['/packagetype/'+package_type]
+
+    humiditySetPoint = IOTPP[package_type+'/humidity']
+    motionSetPoint = IOTPP[package_type+'/motion']
+    temperatureSetPoint = IOTPP[package_type+'/temperature']
 
     g.add((PackageType, RDF.type, IOTPP.PackageType))
-    g.add((PackageType, IOTPP.identifier, Literal(package_identifier,datatype=XSD.string)))
-    g.add((PackageType, IOTPP.hasSetPoint, temperaturSetPoint))
-    g.add((PackageType, IOTPP.hasSetPoint, humititySetPoint))
+    g.add((PackageType, IOTPP.identifier, Literal(package_type,datatype=XSD.string)))
+    g.add((PackageType, IOTPP.hasSetPoint, humiditySetPoint))
     g.add((PackageType, IOTPP.hasSetPoint, motionSetPoint))
+    g.add((PackageType, IOTPP.hasSetPoint, temperatureSetPoint))
 
-    g.add((temperaturSetPoint,RDF.type, IOTPP.TemperaturSetPoint))
-    g.add((temperaturSetPoint, IOTPP.value, Literal(temperaturValue, datatype=XSD.int)))
-    g.add((humititySetPoint,RDF.type, IOTPP.HumititySetPoint))
-    g.add((humititySetPoint, IOTPP.value, Literal(humitityValue, datatype=XSD.int)))
+    g.add((humiditySetPoint,RDF.type, IOTPP.HumiditySetPoint))
+    g.add((humiditySetPoint, IOTPP.value, Literal(humidity_value, datatype=XSD.int)))
     g.add((motionSetPoint,RDF.type, IOTPP.MotionSetPoint))
-    g.add((motionSetPoint,IOTPP.value, Literal(motionValue, datatype=XSD.int)))
+    g.add((motionSetPoint,IOTPP.value, Literal(motion_value, datatype=XSD.int)))
+    g.add((temperatureSetPoint,RDF.type, IOTPP.TemperatureSetPoint))
+    g.add((temperatureSetPoint, IOTPP.value, Literal(temperature_value, datatype=XSD.int)))
 
 def insert_device(deviceid):
     deviceId = deviceid
@@ -89,6 +95,10 @@ def get_setpoints_on_packagetype(package_identifier):
     setpoints_result = [int(setpoints[i][0]) for i in range(len(setpoints))]
     return setpoints_result
 
+def get_package_types():
+    package_types = _query_package_types()
+    return [str(package_types[i][0]) for i in range(len(package_types))]
+
 def _query_device_Ids():
     q_deviceIds = '''
     SELECT DISTINCT ?deviceid
@@ -126,17 +136,22 @@ def _query_setpoints_for_packagetype(package_identifier):
     '''.format(package_identifier)
     return query(g,q_setpoints)
 
+def _query_package_types():
+    q_package_types = '''
+    SELECT DISTINCT ?identifier
+    WHERE {
+        ?packagetype    rdf:type                iotPP:PackageType .
+        ?packagetype    iotPP:identifier        ?identifier
+    } ORDER BY ?identifier
+    '''
+    return query(g,q_package_types)
+
 
 #Code for testing 
 _init()
 
-insert_device('30aea4ddc98c')
-insert_device('50aefjiejf')
-insert_package_to_device('30aea4ddc98c','sde445jfdivbds','box')
-insert_package_to_device('30aea4ddc98c','leteerf34fere','letter')
-
-print(get_all_deviceIds())
-print(get_package_on_device('30aea4ddc98c'))
-print(get_setpoints_on_packagetype('letter'))
+# print(get_all_deviceIds())
+# print(get_package_on_device('30aea4ddc98c'))
+# print(get_setpoints_on_packagetype('letter'))
 
 

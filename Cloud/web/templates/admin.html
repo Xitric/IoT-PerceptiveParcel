@@ -8,12 +8,9 @@
 
         <label for="packageType">Package type:</label><br/>
         <select id="packageType" name="packageType">
-            <option value="letter">Letter</option>
-            <option value="clothing">Clothing</option>
-            <option value="glass">Glass</option>
-            <option value="electronics">Electronics</option>
-            <option value="food">Food</option>
-            <option value="animal">Animal</option>
+            {% for t in packageTypes %}
+            <option value={{t}}>{{t.capitalize()}}</option>
+            {% endfor %}
         </select><br/>
         <input type="submit"/>
     </form>
