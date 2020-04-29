@@ -19,7 +19,7 @@ def model():
     g = Graph()
 
     # Read file describing our data types and relationships for build information
-    g.parse('PackageSchema.ttl', format='turtle')
+    g.parse('repository/PackageSchema.ttl', format='turtle')
 
     g.bind('rdf', RDF)
     g.bind('rdfs', RDFS)

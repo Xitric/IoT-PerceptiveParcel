@@ -14,16 +14,13 @@ iotPP:Event a owl:Class .
 iotPP:Topic a owl:Class .
 iotPP:PackageType a owl:Class .
 
-iotPP:TemperaturSetPoint rdfs:subClassOf iotPP:SetPoint .
-iotPP:HumititySetPoint rdfs:subClassOf iotPP:SetPoint .
+iotPP:TemperatureSetPoint rdfs:subClassOf iotPP:SetPoint .
+iotPP:HumiditySetPoint rdfs:subClassOf iotPP:SetPoint .
 iotPP:MotionSetPoint rdfs:subClassOf iotPP:SetPoint .
 
 iotPP:TemperatureViolation rdfs:subClassOf iotPP:Event .
-iotPP:HumitityViolation rdfs:subClassOf iotPP:Event .
+iotPP:HumidityViolation rdfs:subClassOf iotPP:Event .
 iotPP:MotionViolation rdfs:subClassOf iotPP:Event .
-
-
-
 
 iotPP:timestamp rdfs:subClassOf owl:DatatypeProperty;
     rdfs:domain iotPP:Event ;

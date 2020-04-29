@@ -1,0 +1,210 @@
+@prefix brick: <https://brickschema.org/schema/1.0.3/Brick#> .
+@prefix frame: <https://brickschema.org/schema/1.0.3/BrickFrame#> .
+@prefix iotPP: <https://github.com/Xitric/IoT-PerceptiveParcel#> .
+@prefix iotpp: <https://github.com/Xitric/IoT-PerceptiveParcel#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/device/30aea4dd02a8> a iotpp:Device ;
+    iotpp:deviceId "30aea4dd02a8"^^xsd:ID .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/device/30aea4ddc98c> a iotpp:Device ;
+    iotpp:deviceId "30aea4ddc98c"^^xsd:ID .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype/animal> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#animal/humidity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#animal/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#animal/temperature> ;
+    iotpp:identifier "animal"^^xsd:string .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype/ceramics> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#ceramics/humidity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#ceramics/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#ceramics/temperature> ;
+    iotpp:identifier "ceramics"^^xsd:string .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype/clothing> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#clothing/humidity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#clothing/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#clothing/temperature> ;
+    iotpp:identifier "clothing"^^xsd:string .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype/electronics> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#electronics/humidity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#electronics/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#electronics/temperature> ;
+    iotpp:identifier "electronics"^^xsd:string .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype/food> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#food/humidity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#food/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#food/temperature> ;
+    iotpp:identifier "food"^^xsd:string .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype/glass> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#glass/humidity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#glass/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#glass/temperature> ;
+    iotpp:identifier "glass"^^xsd:string .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype/letter> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#letter/humidity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#letter/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#letter/temperature> ;
+    iotpp:identifier "letter"^^xsd:string .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#/packagetype/polar-animal> a iotpp:PackageType ;
+    iotpp:hasSetPoint <https://github.com/Xitric/IoT-PerceptiveParcel#polar-animal/humidity>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#polar-animal/motion>,
+        <https://github.com/Xitric/IoT-PerceptiveParcel#polar-animal/temperature> ;
+    iotpp:identifier "polar-animal"^^xsd:string .
+
+iotpp:HumidityViolation rdfs:subClassOf iotpp:Event .
+
+iotpp:MotionViolation rdfs:subClassOf iotpp:Event .
+
+iotpp:TemperatureViolation rdfs:subClassOf iotpp:Event .
+
+iotpp:deviceId rdfs:domain iotpp:Device ;
+    rdfs:range xsd:ID ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:hasAPackage rdfs:domain iotpp:Device ;
+    rdfs:range iotpp:Package ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasEvent rdfs:domain iotpp:Topic ;
+    rdfs:range iotpp:Event ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasPackage rdfs:domain iotpp:Event ;
+    rdfs:range iotpp:Package ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasPackageType rdfs:domain iotpp:Package ;
+    rdfs:range iotpp:PackageType ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasSetPoint rdfs:domain iotpp:PackageType ;
+    rdfs:range iotpp:SetPoint ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:hasValue rdfs:domain iotpp:Event ;
+    rdfs:range iotpp:EventValue ;
+    rdfs:subClassOf owl:ObjectProperty .
+
+iotpp:identifier rdfs:domain iotpp:PackageType ;
+    rdfs:range xsd:string ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:packageId rdfs:domain iotpp:Package ;
+    rdfs:range xsd:ID ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:timestamp rdfs:domain iotpp:Event ;
+    rdfs:range xsd:dateTime ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:topicName rdfs:domain iotpp:Topic ;
+    rdfs:range xsd:string ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:value rdfs:domain iotpp:SetPoint ;
+    rdfs:range xsd:int ;
+    rdfs:subClassOf owl:DatatypeProperty .
+
+iotpp:EventValue a owl:Class .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#animal/humidity> a iotpp:HumiditySetPoint ;
+    iotpp:value "80"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#animal/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "10000"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#animal/temperature> a iotpp:TemperatureSetPoint ;
+    iotpp:value "30"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#ceramics/humidity> a iotpp:HumiditySetPoint ;
+    iotpp:value "80"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#ceramics/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "2500"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#ceramics/temperature> a iotpp:TemperatureSetPoint ;
+    iotpp:value "600"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#clothing/humidity> a iotpp:HumiditySetPoint ;
+    iotpp:value "50"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#clothing/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "20000"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#clothing/temperature> a iotpp:TemperatureSetPoint ;
+    iotpp:value "23"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#electronics/humidity> a iotpp:HumiditySetPoint ;
+    iotpp:value "30"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#electronics/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "8000"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#electronics/temperature> a iotpp:TemperatureSetPoint ;
+    iotpp:value "45"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#food/humidity> a iotpp:HumiditySetPoint ;
+    iotpp:value "40"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#food/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "3000"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#food/temperature> a iotpp:TemperatureSetPoint ;
+    iotpp:value "5"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#glass/humidity> a iotpp:HumiditySetPoint ;
+    iotpp:value "80"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#glass/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "1000"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#glass/temperature> a iotpp:TemperatureSetPoint ;
+    iotpp:value "550"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#letter/humidity> a iotpp:HumiditySetPoint ;
+    iotpp:value "60"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#letter/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "10000"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#letter/temperature> a iotpp:TemperatureSetPoint ;
+    iotpp:value "23"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#polar-animal/humidity> a iotpp:HumiditySetPoint ;
+    iotpp:value "80"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#polar-animal/motion> a iotpp:MotionSetPoint ;
+    iotpp:value "10000"^^xsd:int .
+
+<https://github.com/Xitric/IoT-PerceptiveParcel#polar-animal/temperature> a iotpp:TemperatureSetPoint ;
+    iotpp:value "0"^^xsd:int .
+
+iotpp:Topic a owl:Class .
+
+iotpp:Device a owl:Class .
+
+iotpp:Package a owl:Class .
+
+iotpp:SetPoint a owl:Class .
+
+iotpp:Event a owl:Class .
+
+iotpp:HumiditySetPoint rdfs:subClassOf iotpp:SetPoint .
+
+iotpp:MotionSetPoint rdfs:subClassOf iotpp:SetPoint .
+
+iotpp:TemperatureSetPoint rdfs:subClassOf iotpp:SetPoint .
+
+iotpp:PackageType a owl:Class .
+
