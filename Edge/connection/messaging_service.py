@@ -31,16 +31,8 @@ class MessagingService:
         self.wifi = wifi
         self.channels = []
         self.oled = oled
+        self.package_id = None
         self.thread = Thread(self.__messaging_loop, "MessageThread")
-        
-        # TODO: Generalize and store setpoint values too?
-        # Then we should extract it to a file like config.py
-        if CONFIG_FILE in os.listdir():
-            config = self.__read_config()
-            self.package_id = config["package_id"]
-            self.oled.push_line("ID: {}".format(self.package_id))
-        else:
-            self.package_id = None
         
         # Semaphore for signaling the messaging service
         self._message_semaphore = _thread.allocate_lock()
@@ -62,19 +54,6 @@ class MessagingService:
         if self._message_semaphore.locked():
             self._message_semaphore.release()
     
-    def set_package_id(self, package_id: str):
-        self.package_id = package_id
-
-        if not CONFIG_FILE in os.listdir():
-            config = {}
-        else:
-            config = self.__read_config()
-
-        config["package_id"] = package_id
-
-        with open(CONFIG_FILE, "w") as config_file:
-            config_file.write(ujson.dumps(config))
-    
     def __read_config(self):
         with open(CONFIG_FILE, "r") as config_file:
             return ujson.loads("".join(config_file.readlines()))
@@ -90,12 +69,11 @@ class MessagingService:
             # itself until someone else calls release on the lock.
 
             if self.__has_pending_messages():
-                # While there are pending messages, retry every ten minutes
-                self._message_semaphore.acquire(1, 10 * 60)
+                # While there are pending messages, retry every thirty seconds
+                self._message_semaphore.acquire(1, 30)
             else:
                 # Otherwise wait for an explicit signal
                 self._message_semaphore.acquire()
-            
             self._sync_lock.acquire()
             try:
                 if not self.__has_pending_messages():

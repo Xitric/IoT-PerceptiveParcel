@@ -74,8 +74,9 @@ class PackageMonitor:
         while thread.active:
             did_transmit = False
 
-            if self.__check_motion():
-                did_transmit = True
+            if self.motion_setpoint:
+                if self.__check_motion():
+                    did_transmit = True
 
             if did_transmit:
                 # TODO: Move to budget manager
@@ -85,7 +86,7 @@ class PackageMonitor:
             utime.sleep_ms(100)
 
     def __check_temperature(self) -> bool:
-        temperature = self.sensor.read_temp()
+        temperature = self.environment_sensor.read_temp()
         print("Read temperature: {}".format(temperature))
 
         if temperature > self.temperature_setpoint:
@@ -96,7 +97,7 @@ class PackageMonitor:
         return False
 
     def __check_humidity(self) -> bool:
-        humidity = self.sensor.read_humi()
+        humidity = self.environment_sensor.read_humi()
         print("Read humidity: {}".format(humidity))
 
         if humidity > self.humidity_setpoint:
@@ -130,12 +131,12 @@ class PackageMonitor:
 
     def _on_package_id(self, topic, msg):
         print('Received package id {}'.format(msg))
-        self.oled.push_line("PID: {}".format(msg))
-        self.messaging.set_package_id(msg)
+        # self.oled.push_line("PID: {}".format(msg))  # Recursion too deep
+        self.messaging.package_id = msg
         # TODO: Unsubscribe from old id - umqttsimple does not support this!
         self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(self.messaging.package_id), self._on_temperature_setpoint, 1)
         self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT.format(self.messaging.package_id), self._on_humidity_setpoint, 1)
-        self.mqtt.subscribe(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), self._on_motion_setpoint, 1)
+        self.mqtt.subscribe(TOPIC_MOTION_SETPOINT.format(self.messaging.package_id), self._on_motion_setpoint, 1)
         self.messaging.notify()
 
     def _on_temperature_setpoint(self, topic, msg):
@@ -146,6 +147,6 @@ class PackageMonitor:
         self.humidity_setpoint = float(msg)
         print('Received humidity {}'.format(msg))
 
-    def _on_motion_setpoint(self, topic ,msg):
+    def _on_motion_setpoint(self, topic, msg):
         self.motion_setpoint = float(msg)
         print('Received motion {}'.format(msg))
