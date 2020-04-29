@@ -7,6 +7,7 @@ from connection import MessagingService, Wifi, MqttConnection
 import ubinascii
 import machine
 import utime
+import ujson
 import sys
 
 TOPIC_DEVICE_PACKAGE = 'hcklI67o/device/{}/package'
@@ -87,10 +88,10 @@ class PackageMonitor:
         temperature = self.sensor.read_temp()
         print("Read temperature: {}".format(temperature))
 
-        if temperature > 35:  # self.temperature_setpoint:
-            # todo time
-
-            self.mqtt.publish(TOPIC_TEMPERATURE_PUBLISH.format(self.messaging.package_id), temperature, qos=1)
+        if temperature > self.temperature_setpoint:
+            time = utime.localtime()
+            temperature_time = ujson.dumps({"temperature": temperature, "time": time})
+            self.mqtt.publish(TOPIC_TEMPERATURE_PUBLISH.format(self.messaging.package_id), temperature_time, qos=1)
             return True
         return False
 
@@ -98,9 +99,10 @@ class PackageMonitor:
         humidity = self.sensor.read_humi()
         print("Read humidity: {}".format(humidity))
 
-        if humidity > 80:  # self.humidity_setpoint:
-            # todo time
-            self.mqtt.publish(TOPIC_HUMIDITY_PUBLISH.format(self.messaging.package_id), humidity, qos=1)
+        if humidity > self.humidity_setpoint:
+            time = utime.localtime()
+            humidity_time = ujson.dumps({"humidity": humidity, "time": time})
+            self.mqtt.publish(TOPIC_HUMIDITY_PUBLISH.format(self.messaging.package_id), humidity_time, qos=1)
             return True
         return False
 
@@ -118,13 +120,10 @@ class PackageMonitor:
         self.last_y = y
         self.last_x = x
 
-        if motion > 20000:
-            print(utime.localtime())
-            # send_time = machine.RTC().datetime()
-            # print(send_time)
-            print("The motion: " + str(motion))
-            # todo time
-            self.mqtt.publish(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), motion, qos=1)
+        if motion > self.motion_setpoint: #20000
+            time = utime.time()
+            motion_time = ujson.dumps({"motion": motion, "time": time})
+            self.mqtt.publish(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), motion_time, qos=1)
             return True
 
         return False
@@ -134,9 +133,9 @@ class PackageMonitor:
         self.oled.push_line("PID: {}".format(msg))
         self.messaging.set_package_id(msg)
         # TODO: Unsubscribe from old id - umqttsimple does not support this!
-        self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(self.messaging.package_id), self._on_temperature_setpoint,
-                            1)
+        self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(self.messaging.package_id), self._on_temperature_setpoint, 1)
         self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT.format(self.messaging.package_id), self._on_humidity_setpoint, 1)
+        self.mqtt.subscribe(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), self._on_motion_setpoint, 1)
         self.messaging.notify()
 
     def _on_temperature_setpoint(self, topic, msg):
@@ -146,3 +145,7 @@ class PackageMonitor:
     def _on_humidity_setpoint(self, topic, msg):
         self.humidity_setpoint = float(msg)
         print('Received humidity {}'.format(msg))
+
+    def _on_motion_setpoint(self, topic ,msg):
+        self.motion_setpoint = float(msg)
+        print('Received motion {}'.format(msg))
