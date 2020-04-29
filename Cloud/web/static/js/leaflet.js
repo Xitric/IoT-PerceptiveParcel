@@ -1,5 +1,12 @@
-let rawRoute = document.getElementById('mapScript').innerHTML;
-let route = JSON.parse(rawRoute);
+let packageJSON = document.getElementById('mapScript').innerHTML;
+
+let packageData = JSON.parse(packageJSON)
+// let route = JSON.get(route)
+// humidity = JSON.get(humidity)
+// temperature = JSON.get(temperature)
+
+let route = packageData.route
+let humidities = packageData.humidities
 
 // Initialize leaflet
 let map = L.map('leaflet-map').setView([0, 0], 2);
@@ -17,6 +24,7 @@ var polyline = L.polyline(latlngs, { color: 'red' }).addTo(map);
 // Makes a mouseover for the values; coordinate, timestamp and package event.
 // TODO: Events
 for (point of route) {
+    console.log(point)
     L.circleMarker(
         toCoordinate(point), {
             radius: 5,
@@ -28,8 +36,25 @@ for (point of route) {
             color: 'transparent'
         }).addTo(map).bindTooltip(
             `Coordinate: ${toCoordinate(point)} <br/>
-            Timestamp: ${secondsToDate(point.time)} <br/> 
-            Event: ${"Shake"}`
+            Timestamp: ${secondsToDate(point.time)} <br/>`
+        );
+}
+
+for (humidity of humidities) {
+    console.log(humidity)
+    L.circleMarker(
+        toCoordinate(humidity), {
+            radius: 10,
+            color: 'black'
+        }).addTo(map);
+    L.circleMarker(
+        toCoordinate(humidity), {
+            radius: 30,
+            color: 'transparent'
+        }).addTo(map).bindTooltip(
+            `Coordinate: ${toCoordinate(humidity)} <br/>
+            Timestamp: ${secondsToDate(humidity.time)} <br/>
+             Event: ${humidity}`
         );
 }
 

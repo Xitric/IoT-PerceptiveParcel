@@ -18,12 +18,8 @@ def get_route(package_id: str):
 
         cursor = connection.cursor()
         cursor.execute(query, data)
-        
-        # Unfortunately, list comprehension did not work
-        points = []
-        for (timestamp, latitude, longitude, accuracy) in cursor:
-            points.append((timestamp, latitude, longitude, accuracy))
-        return points
+
+        return cursor.fetchall()
 
     except db.Error as e:
         print("Error reading route from database", e)
@@ -34,6 +30,26 @@ def get_route(package_id: str):
             cursor.close()
             print("Database connection closed")
 
+def get_humidities(package_id: str):
+    try:
+        connection = __connect('location_db')
+
+        query = "SELECT timestamp, humidity FROM humidity WHERE package_id = %s ORDER BY timestamp"
+        data = (package_id,)
+
+        cursor = connection.cursor()
+        cursor.execute(query, data)
+
+        return cursor.fetchall()
+
+    except db.Error as e:
+        print("Error reading humidity values from database", e)
+
+    finally:
+        if connection.is_connected():
+            connection.close()
+            cursor.close()
+            print("Database connection closed")
 
 def insert_location(package_id: str, timestamp: int, latitude: float, longitude: float, accuracy: int):
     try:
