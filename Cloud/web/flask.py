@@ -82,13 +82,13 @@ def get_events(package_id, route_data):
         event_value = event[1]
         event_type = event[2]
         lower_point_index = 0
-        lower_point = ()
+        lower_point = None
         for i, point in enumerate(route):
             point_time = point[0]
             if point_time <= event_time:
                 lower_point_index = i
                 lower_point = point
-            if point_time >= event_time:
+            if point_time >= event_time and lower_point:
                 percent = percentage_to_lower_bound(event_time, lower_point[0], point[0])
                 event_point = midpoint(lower_point[1], lower_point[2], point[1], point[2], percent)
                 event_latitude = event_point[0]
