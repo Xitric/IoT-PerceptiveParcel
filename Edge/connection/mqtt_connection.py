@@ -1,4 +1,4 @@
-from connection import Wifi, MQTTClient
+from connection import Wifi, MQTTClient, MessagingService, config
 import ubinascii
 import machine
 import os
@@ -9,6 +9,7 @@ import sys
 EHOSTUNREACH = 113
 BUFFER_FILE = 'mqtt-buffer.txt'
 BUFFER_FILE_COPY = 'mqtt-buffer-copy.txt'
+TOPIC_DEVICE_PACKAGE = 'hcklI67o/device/{}/package'
 
 class MqttConnection(MQTTClient):
     """
@@ -21,18 +22,22 @@ class MqttConnection(MQTTClient):
     in-memory.
     """
 
-    def __init__(self, broker: str, wifi: Wifi, oled):
-        super().__init__(ubinascii.hexlify(machine.unique_id()), broker)
+    def __init__(self, broker: str, wifi: Wifi, messaging: MessagingService, oled):
+        self.device_id = ubinascii.hexlify(machine.unique_id()).decode()
+        super().__init__(self.device_id, broker)
         self.wifi = wifi
+        self.messaging = messaging
         self.oled = oled
         self.thread = Thread(self.__receive_loop, "MqttThread")
-        self.thread.start()
 
         self._subscribers = {}
         self._pending_subscriptions = []
         super().set_callback(self.__on_receive)
 
         self.sync_lock = ReentrantLock()
+    
+    def start(self):
+        self.thread.start()
 
     def has_pending_messages(self):
         """
@@ -178,7 +183,6 @@ class MqttConnection(MQTTClient):
                 self.sock.close()
                 self.connect()
         except (OSError, IndexError):
-            # I really don't know why we are getting random index errors...
             pass
 
     def publish(self, topic: bytes, msg, retain=False, qos=0):
@@ -198,15 +202,19 @@ class MqttConnection(MQTTClient):
         try:
             if topic in self._subscribers:
                 self._subscribers[topic].append(callback)
+                print("Already subscribed to {}".format(topic))
             else:
                 self._subscribers[topic] = [callback]
+                self._pending_subscriptions.append((topic, qos))
+                print("Buffered subscription {}".format(topic))
             
-            self._pending_subscriptions.append((topic, qos))
-            print("Buffered subscription {}".format(topic))
         finally:
             self.sync_lock.release()
     
     def __receive_loop(self, thread: Thread):
+        self.subscribe(TOPIC_DEVICE_PACKAGE.format(self.device_id), self._on_package_id, 1)
+        self.messaging.notify()
+
         """Listens for new messages from the broker."""
         while thread.active:
             self.sync_lock.acquire()
@@ -238,6 +246,13 @@ class MqttConnection(MQTTClient):
                 except OSError:
                     if retry is not 4:
                         self.__reconnect()
+
+    def _on_package_id(self, topic, msg):
+        self.messaging.package_id = msg
+        config.set_value("package_id", msg)
+
+        print('Received package id {}'.format(msg))
+        self.oled.push_line("ID: {}".format(msg))
 
     def __on_receive(self, topic, msg):
         """Handle messages received from the MQTT broker."""

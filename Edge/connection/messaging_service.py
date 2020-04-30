@@ -1,11 +1,6 @@
-from connection import Wifi
+from connection import Wifi, config
 from thread import Thread, ReentrantLock
 import _thread
-import ujson
-import sys
-import os
-
-CONFIG_FILE = "config.json"
 
 class MessagingService:
     """
@@ -31,9 +26,9 @@ class MessagingService:
         self.wifi = wifi
         self.channels = []
         self.oled = oled
-        self.package_id = None
+        self.package_id = config.get_string("package_id")
         self.thread = Thread(self.__messaging_loop, "MessageThread")
-        
+
         # Semaphore for signaling the messaging service
         self._message_semaphore = _thread.allocate_lock()
 
@@ -53,10 +48,6 @@ class MessagingService:
         """
         if self._message_semaphore.locked():
             self._message_semaphore.release()
-    
-    def __read_config(self):
-        with open(CONFIG_FILE, "r") as config_file:
-            return ujson.loads("".join(config_file.readlines()))
 
     def __messaging_loop(self, thread: Thread):
         # This exception handling is necessary in order for background threads
