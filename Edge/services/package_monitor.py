@@ -21,8 +21,8 @@ TOPIC_MOTION_PUBLISH = 'hcklI67o/package/{}/motion'
 
 
 class PackageMonitor:
-    def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService):
-        self.wifi = wifi
+
+    def __init__(self, mqtt: MqttConnection, messaging: MessagingService):
         self.mqtt = mqtt
         self.messaging = messaging
 
@@ -44,7 +44,7 @@ class PackageMonitor:
         self.mqtt.subscribe(TOPIC_DEVICE_PACKAGE.format(self.mqtt.device_id), self._on_package_id, 1)
         self.messaging.notify()
 
-    def __subscribe_setpoints(self, package_id):
+    def _on_package_id(self, topic, package_id):
         # TODO: Unsubscribe from old id - umqttsimple does not support this!
         self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(package_id), self._on_temperature_setpoint, 1)
         self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT.format(package_id), self._on_humidity_setpoint, 1)
@@ -133,9 +133,6 @@ class PackageMonitor:
             return True
 
         return False
-
-    def _on_package_id(self, topic, msg):
-        self.__subscribe_setpoints(msg)
 
     def _on_temperature_setpoint(self, topic, msg):
         self.temperature_setpoint = float(msg)
