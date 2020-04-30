@@ -137,13 +137,13 @@ iotpp:EventValue a owl:Class .
     iotpp:value "600"^^xsd:int .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#clothing/humidity> a iotpp:HumiditySetPoint ;
-    iotpp:value "50"^^xsd:int .
+    iotpp:value "65"^^xsd:int .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#clothing/motion> a iotpp:MotionSetPoint ;
     iotpp:value "20000"^^xsd:int .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#clothing/temperature> a iotpp:TemperatureSetPoint ;
-    iotpp:value "23"^^xsd:int .
+    iotpp:value "40"^^xsd:int .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#electronics/humidity> a iotpp:HumiditySetPoint ;
     iotpp:value "30"^^xsd:int .
@@ -173,13 +173,13 @@ iotpp:EventValue a owl:Class .
     iotpp:value "550"^^xsd:int .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#letter/humidity> a iotpp:HumiditySetPoint ;
-    iotpp:value "60"^^xsd:int .
+    iotpp:value "70"^^xsd:int .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#letter/motion> a iotpp:MotionSetPoint ;
     iotpp:value "10000"^^xsd:int .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#letter/temperature> a iotpp:TemperatureSetPoint ;
-    iotpp:value "23"^^xsd:int .
+    iotpp:value "40"^^xsd:int .
 
 <https://github.com/Xitric/IoT-PerceptiveParcel#polar-animal/humidity> a iotpp:HumiditySetPoint ;
     iotpp:value "80"^^xsd:int .

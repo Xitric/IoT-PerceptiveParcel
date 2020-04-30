@@ -13,8 +13,8 @@ from repository.wrapper import model, query, IOTPP, RDF, XSD
 g = model()
 
 def _init():
-    insert_package_type('letter', 60, 10000, 23)
-    insert_package_type('clothing', 50, 20000, 23)
+    insert_package_type('letter', 70, 10000, 40)
+    insert_package_type('clothing', 65, 20000, 40)
     insert_package_type('glass', 80, 1000, 550)
     insert_package_type('ceramics', 80, 2500, 600)
     insert_package_type('electronics', 30, 8000, 45)
@@ -25,13 +25,6 @@ def _init():
     insert_device('30aea4ddc98c')  # Kasper
     insert_device('30aea4dd02a8')  # Emil
     g.serialize("repository/model.ttl", 'turtle')
-
-    # packageId = 'ab3dm23jhl43bfj'
-    # Package = IOTPP['/package/'+packageId]
-
-    # g.add((Package, RDF.type, IOTPP.Package))
-    # g.add((Package, IOTPP.hasPackageType, IOTPP['/packagetype/letter']))
-    # g.add((Package, IOTPP.packageId, Literal(packageId,datatype=XSD.ID)))
 
 def insert_package_type(package_type, humidity_value, motion_value, temperature_value):
     PackageType = IOTPP['/packagetype/'+package_type]

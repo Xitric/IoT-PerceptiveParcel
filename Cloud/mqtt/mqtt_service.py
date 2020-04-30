@@ -22,6 +22,9 @@ TOPIC_MACLOCATION_PUBLISH = 'hcklI67o/package/+/maclocation'
 TOPIC_COORDINATES_PUBLISH = 'hcklI67o/package/{}/coordinates'
 TOPIC_PACKAGEID_PUBLISH = 'hcklI67o/device/{}/package'
 
+# Topics to ping packages
+TOPIC_PING = 'hcklI67o/package/{}/ping'
+
 MILLENNIUM_SECONDS = 946681200
 
 client = paho.Client()
@@ -141,10 +144,10 @@ def set_humidity_setpoint(package_id, setpoint):
     client.publish(TOPIC_HUMIDITY_SETPOINT.format(package_id), setpoint, qos=1, retain=True)
 
 def set_package_id(device_id, package_id):
-    print("Publish to")
-    print(TOPIC_DEVICE_PACKAGE.format(device_id))
-    print(package_id)
     client.publish(TOPIC_DEVICE_PACKAGE.format(device_id), package_id, qos=1, retain=True)
+
+def ping_package(package_id):
+    client.publish(TOPIC_PING.format(package_id), '0', qos=2, retain=False)
 
 client.on_connect = __on_connect
 client.on_publish = __on_publish

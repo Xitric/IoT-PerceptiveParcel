@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, abort
 from werkzeug.exceptions import NotFound
 from repository import db_context
 from repository import ontology_context
+from mqtt import mqtt_service
 from web import package_manager
 import json
 
@@ -31,6 +32,12 @@ def showMap():
     } for point in route]
 
     return render_template("map.html", route=json.dumps(route_data))
+
+@app.route("/map/ping")
+def ping():
+    package_id = request.args.get("packid")
+    mqtt_service.ping_package(package_id)
+    return redirect(url_for('showMap', packid=package_id))
 
 @app.route("/admin")
 def admin():

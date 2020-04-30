@@ -13,4 +13,8 @@
     <h1>Welcome to package tracking</h1>
     <div id="leaflet-map"></div>
     <script async src="/js/leaflet.js" id="mapScript">{{route|safe}}</script>
+    <form action="/map/ping">
+        <input type="hidden" name="packid" value="{{request.args.get('packid')}}"/>
+        <input type="submit" value="Ping my package"/>
+    </form>
 {% endblock %}
