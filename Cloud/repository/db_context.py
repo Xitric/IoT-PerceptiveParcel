@@ -18,15 +18,35 @@ def get_route(package_id: str):
 
         cursor = connection.cursor()
         cursor.execute(query, data)
-        
-        # Unfortunately, list comprehension did not work
-        points = []
-        for (timestamp, latitude, longitude, accuracy) in cursor:
-            points.append((timestamp, latitude, longitude, accuracy))
-        return points
+
+        return cursor.fetchall()
 
     except db.Error as e:
         print("Error reading route from database", e)
+
+    finally:
+        if connection.is_connected():
+            connection.close()
+            cursor.close()
+            print("Database connection closed")
+
+
+def get_events(package_id: str):
+    try:
+        connection = __connect('location_db')
+
+        query = "(SELECT timestamp, humidity, 'Humidity' AS 'event' FROM humidity WHERE package_id = %s) UNION (" \
+                "SELECT timestamp, motion, 'Motion' FROM motion WHERE package_id = %s) UNION (SELECT timestamp, " \
+                "temperature, 'Temperature' FROM temperature WHERE package_id = %s) ORDER BY timestamp; "
+        data = (package_id, package_id, package_id)
+
+        cursor = connection.cursor()
+        cursor.execute(query, data)
+
+        return cursor.fetchall()
+
+    except db.Error as e:
+        print("Error reading event values from database", e)
 
     finally:
         if connection.is_connected():
