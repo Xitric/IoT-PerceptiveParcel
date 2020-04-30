@@ -1,7 +1,5 @@
-from mqtt import MqttService
-from web import start_flask
+import mqtt
+import web
 
-mqtt = MqttService()
 mqtt.start()
-
-start_flask()
+web.start()

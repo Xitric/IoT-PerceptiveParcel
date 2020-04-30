@@ -52,7 +52,7 @@ class MQTTClient:
         self.lw_qos = qos
         self.lw_retain = retain
 
-    def connect(self, clean_session=True):
+    def connect(self, clean_session=False):
         self.sock = socket.socket()
         addr = socket.getaddrinfo(self.server, self.port)[0][-1]
         self.sock.connect(addr)
@@ -150,15 +150,15 @@ class MQTTClient:
         self.sock.write(pkt)
         self._send_str(topic)
         self.sock.write(qos.to_bytes(1, "little"))
-        while 1:
-            op = self.wait_msg()
-            if op == 0x90:
-                resp = self.sock.read(4)
-                #print(resp)
-                assert resp[1] == pkt[2] and resp[2] == pkt[3]
-                if resp[3] == 0x80:
-                    raise MQTTException(resp[3])
-                return
+        # while 1:
+        #     op = self.wait_msg()
+        #     if op == 0x90:
+        #         resp = self.sock.read(4)
+        #         #print(resp)
+        #         assert resp[1] == pkt[2] and resp[2] == pkt[3]
+        #         if resp[3] == 0x80:
+        #             raise MQTTException(resp[3])
+        #         return
 
     # Wait for a single incoming MQTT message and process it.
     # Subscribed messages are delivered to a callback previously

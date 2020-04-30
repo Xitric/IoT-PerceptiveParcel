@@ -6,18 +6,20 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix iotPP: <https://github.com/Xitric/IoT-PerceptiveParcel#> .
 
+iotPP:Device a owl:Class .
 iotPP:Package a owl:Class .
 iotPP:SetPoint a owl:Class .
 iotPP:EventValue a owl:Class .
 iotPP:Event a owl:Class .
 iotPP:Topic a owl:Class .
+iotPP:PackageType a owl:Class .
 
-iotPP:TemperaturSetPoint rdfs:subClassOf iotPP:SetPoint .
-iotPP:HumititySetPoint rdfs:subClassOf iotPP:SetPoint .
+iotPP:TemperatureSetPoint rdfs:subClassOf iotPP:SetPoint .
+iotPP:HumiditySetPoint rdfs:subClassOf iotPP:SetPoint .
 iotPP:MotionSetPoint rdfs:subClassOf iotPP:SetPoint .
 
 iotPP:TemperatureViolation rdfs:subClassOf iotPP:Event .
-iotPP:HumitityViolation rdfs:subClassOf iotPP:Event .
+iotPP:HumidityViolation rdfs:subClassOf iotPP:Event .
 iotPP:MotionViolation rdfs:subClassOf iotPP:Event .
 
 iotPP:timestamp rdfs:subClassOf owl:DatatypeProperty;
@@ -28,9 +30,25 @@ iotPP:packageId rdfs:subClassOf owl:DatatypeProperty;
     rdfs:domain iotPP:Package ;
     rdfs:range xsd:ID .
 
+iotPP:deviceId rdfs:subClassOf owl:DatatypeProperty;
+    rdfs:domain iotPP:Device ;
+    rdfs:range xsd:ID .
+
 iotPP:topicName rdfs:subClassOf owl:DatatypeProperty;
     rdfs:domain iotPP:Topic ;
     rdfs:range xsd:string .
+
+iotPP:value rdfs:subClassOf owl:DatatypeProperty;
+    rdfs:domain iotPP:SetPoint ;
+    rdfs:range  xsd:int .
+
+iotPP:identifier rdfs:subClassOf owl:DatatypeProperty;
+    rdfs:domain iotPP:PackageType ;
+    rdfs:range  xsd:string .
+
+iotPP:hasPackageType rdfs:subClassOf owl:ObjectProperty;
+    rdfs:domain iotPP:Package ;
+    rdfs:range iotPP:PackageType . 
 
 iotPP:hasValue rdfs:subClassOf owl:ObjectProperty;
     rdfs:domain iotPP:Event ;
@@ -40,14 +58,19 @@ iotPP:hasEvent rdfs:subClassOf owl:ObjectProperty;
     rdfs:domain iotPP:Topic ;
     rdfs:range iotPP:Event .
 
+#Used
 iotPP:hasSetPoint rdfs:subClassOf owl:ObjectProperty;
-    rdfs:domain iotPP:Package ;
+    rdfs:domain iotPP:PackageType ;
     rdfs:range iotPP:SetPoint .
 
 iotPP:hasPackage rdfs:subClassOf owl:ObjectProperty;
     rdfs:domain iotPP:Event ;
     rdfs:range iotPP:Package . 
 
+#Used
+iotPP:hasAPackage rdfs:subClassOf owl:ObjectProperty;
+    rdfs:domain iotPP:Device ;
+    rdfs:range iotPP:Package . 
 
 
 

@@ -2,34 +2,16 @@
 {% block title %}Admin panel{% endblock %}
 {% block body %}
     <h1>Assign new package to device</h1>
-    <form id="packageForm" action="/device/" onsubmit="formSubmit">
+    <form id="packageForm" action="/admin/newPackage" onsubmit="formSubmit">
         <label for="deviceId">Device ID:</label><br/>
         <input type="text" id="deviceId" name="deviceId"/><br/>
 
         <label for="packageType">Package type:</label><br/>
         <select id="packageType" name="packageType">
-            <option value="letter">Letter</option>
-            <option value="clothing">Clothing</option>
-            <option value="glass">Glass</option>
-            <option value="electronics">Electronics</option>
-            <option value="food">Food</option>
-            <option value="animal">Animal</option>
+            {% for t in packageTypes %}
+            <option value={{t}}>{{t.capitalize()}}</option>
+            {% endfor %}
         </select><br/>
         <input type="submit"/>
     </form>
-
-    <script>
-        function formSubmit() {
-            let deviceIdField = document.getElementById("deviceId")
-            alert("Got it")
-            form.setAttribute("action", `/device/${deviceIdField.value}`)
-        }
-
-        // let form = document.getElementById("packageForm")
-        // let deviceIdField = document.getElementById("deviceId")
-        // form.onsubmit(() => {
-        //     alert("Got it")
-        //     form.setAttribute("action", `/device/${deviceIdField.value}`)
-        // })
-    </script>
 {% endblock %}

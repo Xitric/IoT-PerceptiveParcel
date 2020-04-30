@@ -176,7 +176,7 @@ class MqttConnection(MQTTClient):
                 self.connect()
             else:
                 self.sock.close()
-                self.connect(False)
+                self.connect()
         except (OSError, IndexError):
             # I really don't know why we are getting random index errors...
             pass
@@ -246,7 +246,8 @@ class MqttConnection(MQTTClient):
 
         self.sync_lock.acquire()
         try:
-            for subscriber in self._subscribers[topic_decoded]:
-                subscriber(topic_decoded, msg_decoded)
+            if topic_decoded in self._subscribers:
+                for subscriber in self._subscribers[topic_decoded]:
+                    subscriber(topic_decoded, msg_decoded)
         finally:
             self.sync_lock.release()
