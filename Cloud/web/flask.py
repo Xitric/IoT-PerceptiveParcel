@@ -30,16 +30,15 @@ def showMap():
         "accuracy": point[3]
     } for point in route]
 
-    humidity_data = [{
+    event_data = [{
         "time": point[0],
-        "humidity": point[1],
+        "measurement": point[1],
         "latitude": point[2],
-        "longitude": point[3]
-    } for point in get_humidities(package_id, route)]
-    print(humidity_data)
-    print(route_data)
+        "longitude": point[3],
+        "event": point[4]
+    } for point in get_events(package_id, route)]
 
-    package_data = {"route": route_data, "humidities": humidity_data}
+    package_data = {"route": route_data, "events": event_data}
 
     return render_template("map.html", route=json.dumps(package_data))
 
@@ -54,33 +53,34 @@ def not_found(error: NotFound):
     return render_template('notfound.html', error=error), 404
 
 
-# Compute the position of humidity events based on their timestamp, by using the positions of the two coordinates
-# which the humidity timestamp is between.
-def get_humidities(package_id, route_data):
-    humidities = db_context.get_humidities(package_id)
-    humidity_points = []
+# Compute the position of events based on their timestamp, by using the positions of the two coordinates
+# which the event timestamp is between.
+def get_events(package_id, route_data):
+    events = db_context.get_events(package_id)
+    event_points = []
     route = route_data
 
-    for humidity in humidities:
-        humidity_time = humidity[0]
-        humidity_value = humidity[1]
+    for event in events:
+        event_time = event[0]
+        event_value = event[1]
+        event_type = event[2]
         lower_point_index = 0
         lower_point = ()
         for i, point in enumerate(route):
             point_time = point[0]
-            if point_time <= humidity_time:
+            if point_time <= event_time:
                 lower_point_index = i
                 lower_point = point
-            if point_time >= humidity_time:
-                percent = percentage_to_lower_bound(humidity_time, lower_point[0], point[0])
-                humidity_point = midpoint(lower_point[1], lower_point[2], point[1], point[2], percent)
-                humidity_latitude = humidity_point[0]
-                humidity_longitude = humidity_point[1]
-                humidity_points.append((humidity_time, humidity_value, humidity_latitude, humidity_longitude))
+            if point_time >= event_time:
+                percent = percentage_to_lower_bound(event_time, lower_point[0], point[0])
+                event_point = midpoint(lower_point[1], lower_point[2], point[1], point[2], percent)
+                event_latitude = event_point[0]
+                event_longitude = event_point[1]
+                event_points.append((event_time, event_value, event_latitude, event_longitude, event_type))
                 route = route[lower_point_index:]
                 break
 
-    return humidity_points
+    return event_points
 
 
 def percentage_to_lower_bound(event_time, lower_time_bound, upper_time_bound):
