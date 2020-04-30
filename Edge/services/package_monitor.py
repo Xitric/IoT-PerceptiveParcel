@@ -131,7 +131,6 @@ class PackageMonitor:
 
     def _on_package_id(self, topic, msg):
         print('Received package id {}'.format(msg))
-        # self.oled.push_line("PID: {}".format(msg))  # Recursion too deep
         self.messaging.package_id = msg
         # TODO: Unsubscribe from old id - umqttsimple does not support this!
         self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(self.messaging.package_id), self._on_temperature_setpoint, 1)
