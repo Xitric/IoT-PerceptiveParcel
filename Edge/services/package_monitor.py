@@ -3,7 +3,7 @@ import math
 from thread import Thread
 from drivers import MPU6050, HTS221
 from machine import Pin, I2C
-from connection import MessagingService, Wifi, MqttConnection
+from connection import MessagingService, Wifi, MqttConnection, config
 import ubinascii
 import machine
 import utime
@@ -21,18 +21,17 @@ TOPIC_MOTION_PUBLISH = 'hcklI67o/package/{}/motion'
 
 
 class PackageMonitor:
-    def __init__(self, wifi: Wifi, mqtt: MqttConnection, messaging: MessagingService, oled):
-        self.wifi = wifi
+
+    def __init__(self, mqtt: MqttConnection, messaging: MessagingService):
         self.mqtt = mqtt
         self.messaging = messaging
-        self.oled = oled
 
         self.environment_thread = Thread(self.__run_environment, "EnvironmentThread")
         self.motion_thread = Thread(self.__run_motion, "MotionThread")
 
-        self.temperature_setpoint = None
-        self.humidity_setpoint = None
-        self.motion_setpoint = None
+        self.temperature_setpoint = config.get_float("temperature_setpoint")
+        self.humidity_setpoint = config.get_float("humidity_setpoint")
+        self.motion_setpoint = config.get_float("motion_setpoint")
 
         self.last_z = 0
         self.last_y = 0
@@ -41,13 +40,19 @@ class PackageMonitor:
         self.environment_sensor = HTS221(I2C(-1, Pin(26, Pin.IN), Pin(25, Pin.OUT)))
         self.motion_sensor = MPU6050(I2C(-1, Pin(26, Pin.IN), Pin(25, Pin.OUT)))
 
-    def __package_id(self):
-        device_id = ubinascii.hexlify(machine.unique_id()).decode()
-        self.mqtt.subscribe(TOPIC_DEVICE_PACKAGE.format(device_id), self._on_package_id, 1)
+    def __subscribe_package_id(self):
+        self.mqtt.subscribe(TOPIC_DEVICE_PACKAGE.format(self.mqtt.device_id), self._on_package_id, 1)
+        self.messaging.notify()
+
+    def _on_package_id(self, topic, package_id):
+        # TODO: Unsubscribe from old id - umqttsimple does not support this!
+        self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(package_id), self._on_temperature_setpoint, 1)
+        self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT.format(package_id), self._on_humidity_setpoint, 1)
+        self.mqtt.subscribe(TOPIC_MOTION_SETPOINT.format(package_id), self._on_motion_setpoint, 1)
         self.messaging.notify()
 
     def start(self):
-        self.__package_id()
+        self.__subscribe_package_id()
         self.environment_thread.start()
         self.motion_thread.start()
 
@@ -74,8 +79,9 @@ class PackageMonitor:
         while thread.active:
             did_transmit = False
 
-            if self.__check_motion():
-                did_transmit = True
+            if self.motion_setpoint:
+                if self.__check_motion():
+                    did_transmit = True
 
             if did_transmit:
                 # TODO: Move to budget manager
@@ -85,7 +91,7 @@ class PackageMonitor:
             utime.sleep_ms(100)
 
     def __check_temperature(self) -> bool:
-        temperature = self.sensor.read_temp()
+        temperature = self.environment_sensor.read_temp()
         print("Read temperature: {}".format(temperature))
 
         if temperature > self.temperature_setpoint:
@@ -96,7 +102,7 @@ class PackageMonitor:
         return False
 
     def __check_humidity(self) -> bool:
-        humidity = self.sensor.read_humi()
+        humidity = self.environment_sensor.read_humi()
         print("Read humidity: {}".format(humidity))
 
         if humidity > self.humidity_setpoint:
@@ -128,24 +134,20 @@ class PackageMonitor:
 
         return False
 
-    def _on_package_id(self, topic, msg):
-        print('Received package id {}'.format(msg))
-        self.oled.push_line("PID: {}".format(msg))
-        self.messaging.set_package_id(msg)
-        # TODO: Unsubscribe from old id - umqttsimple does not support this!
-        self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(self.messaging.package_id), self._on_temperature_setpoint, 1)
-        self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT.format(self.messaging.package_id), self._on_humidity_setpoint, 1)
-        self.mqtt.subscribe(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), self._on_motion_setpoint, 1)
-        self.messaging.notify()
-
     def _on_temperature_setpoint(self, topic, msg):
         self.temperature_setpoint = float(msg)
-        print('Received temperature {}'.format(msg))
+        # We can't do this, because of the stupid recursion depth
+        # config.set_value("temperature_setpoint", self.temperature_setpoint)
+        print('Received temperature setpoint {}'.format(msg))
 
     def _on_humidity_setpoint(self, topic, msg):
         self.humidity_setpoint = float(msg)
-        print('Received humidity {}'.format(msg))
+        # We can't do this, because of the stupid recursion depth
+        # config.set_value("humidity_setpoint", self.humidity_setpoint)
+        print('Received humidity setpoint {}'.format(msg))
 
-    def _on_motion_setpoint(self, topic ,msg):
+    def _on_motion_setpoint(self, topic, msg):
         self.motion_setpoint = float(msg)
-        print('Received motion {}'.format(msg))
+        # We can't do this, because of the stupid recursion depth
+        # config.set_value("motion_setpoint", self.motion_setpoint)
+        print('Received motion setpoint {}'.format(msg))

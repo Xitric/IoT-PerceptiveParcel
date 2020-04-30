@@ -39,7 +39,6 @@ class Ntp:
                     self.oled.push_line("Updated clock")
                     continue
             except IndexError:
-                # TODO: I have no idea why this happens sometimes
                 print("Failed to update clock")
                 pass
             finally:
