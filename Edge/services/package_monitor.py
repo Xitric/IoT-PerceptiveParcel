@@ -3,7 +3,7 @@ import math
 from thread import Thread
 from drivers import MPU6050, HTS221
 from machine import Pin, I2C
-from connection import MessagingService, Wifi, MqttConnection, config
+from connection import MessagingService, Wifi, MqttConnection, BudgetManager, config
 import ubinascii
 import machine
 import utime
@@ -22,9 +22,10 @@ TOPIC_MOTION_PUBLISH = 'hcklI67o/package/{}/motion'
 
 class PackageMonitor:
 
-    def __init__(self, mqtt: MqttConnection, messaging: MessagingService):
+    def __init__(self, mqtt: MqttConnection, messaging: MessagingService, budget_manager: BudgetManager):
         self.mqtt = mqtt
         self.messaging = messaging
+        self.budget_manager = budget_manager
 
         self.environment_thread = Thread(self.__run_environment, "EnvironmentThread")
         self.motion_thread = Thread(self.__run_motion, "MotionThread")
@@ -96,8 +97,7 @@ class PackageMonitor:
 
         if temperature > self.temperature_setpoint:
             time = utime.localtime()
-            temperature_time = ujson.dumps({"temperature": temperature, "time": time})
-            self.mqtt.publish(TOPIC_TEMPERATURE_PUBLISH.format(self.messaging.package_id), temperature_time, qos=1)
+            self.budget_manager.enqueue(TOPIC_TEMPERATURE_PUBLISH.format(self.messaging.package_id), time, temperature, self.temperature_setpoint)
             return True
         return False
 
@@ -107,8 +107,7 @@ class PackageMonitor:
 
         if humidity > self.humidity_setpoint:
             time = utime.localtime()
-            humidity_time = ujson.dumps({"humidity": humidity, "time": time})
-            self.mqtt.publish(TOPIC_HUMIDITY_PUBLISH.format(self.messaging.package_id), humidity_time, qos=1)
+            self.budget_manager.enqueue(TOPIC_HUMIDITY_PUBLISH.format(self.messaging.package_id), time, humidity, self.humidity_setpoint)
             return True
         return False
 
@@ -128,8 +127,7 @@ class PackageMonitor:
 
         if motion > self.motion_setpoint: #20000
             time = utime.time()
-            motion_time = ujson.dumps({"motion": motion, "time": time})
-            self.mqtt.publish(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), motion_time, qos=1)
+            self.budget_manager.enqueue(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), time, motion, self.motion_setpoint)
             return True
 
         return False
