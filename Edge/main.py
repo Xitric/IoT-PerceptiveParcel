@@ -10,7 +10,7 @@ i2c = I2C(-1, Pin(26, Pin.IN), Pin(25, Pin.OUT))
 oled = SSD1306_I2C(128, 32, i2c)
 
 model = TransmissionModel(0.5, 2)
-budget = Budget(50, 1440, 12, 4)
+budget = Budget(140, 1440, 12, 4)
 budget_manager = BudgetManager(budget, model)
 
 wifi = Wifi("AndroidAP", "vaqz2756")

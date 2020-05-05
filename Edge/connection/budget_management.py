@@ -34,7 +34,6 @@ class MessageBuffer:
 
     def push_message(self, topic: str, time: float, value: float, delta: float):
         message = Message(topic, time, value, delta)
-        print("Pushed message {} with delta {}".format(value, delta))
 
         for index, msg in enumerate(self.stack):
             if msg.delta < delta:
@@ -97,22 +96,19 @@ class TransmissionModel:
         self.significant_delta = significant_delta
         self.early_transmit_factor = early_transmit_factor
 
-    def should_transmit(self, simulation_time: float, buffer: MessageBuffer, budget: Budget) -> bool:
+    def should_transmit(self, time: float, buffer: MessageBuffer, budget: Budget) -> bool:
         # Never transmit an empty buffer, duh
         if len(buffer.stack) == 0:
-            print("Empty buffer, bah")
             return False
-
-        print("{} == {}".format(len(buffer.stack), buffer.size))
+        
         if len(buffer.stack) == buffer.size:
-            if budget.has_exceeded_transmit_interval(simulation_time):
+            if budget.has_exceeded_transmit_interval(time):
                 # Transmit if we have filled the buffer and it is time to transmit
                 return True
             else:
                 # Transmit early only if all messages are significant
                 return buffer.stack[buffer.size - 1].delta > self.significant_delta
         else:
-            print("We might do a partial early buffer")
             # Transmit a partial buffer only if the message is very significant
             return buffer.stack[0].delta > self.significant_delta * self.early_transmit_factor
 
@@ -122,7 +118,7 @@ class BudgetManager:
     """Used to manage when a message is sent over a network connection."""
 
     def __init__(self, budget: Budget, transmission_model: TransmissionModel):
-        self.simulation_time = 0
+        self.start_time = utime.time()
         self.simulation_end = budget.period_length
         self.budget = budget
         self.model = transmission_model
@@ -133,7 +129,13 @@ class BudgetManager:
     
     # Run in messaging service or something
     def should_transmit(self):
-        return self.model.should_transmit(utime.time() / 60, self.buffer, self.budget)
+        time = utime.time() - self.start_time
+        if time > 1000000000:
+            # Would seem as if the NTP service has updated the clock
+            self.start_time = utime.time()
+            time = utime.time() - self.start_time
+        
+        return self.model.should_transmit(time / 60, self.buffer, self.budget)
 
     # Run in MQTT service when tasked to send messages
     # Store in out buffer until network is available
