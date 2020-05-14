@@ -150,6 +150,7 @@ class MQTTClient:
         self.sock.write(pkt)
         self._send_str(topic)
         self.sock.write(qos.to_bytes(1, "little"))
+        # Removed because of issues with recursion depth
         # while 1:
         #     op = self.wait_msg()
         #     if op == 0x90:

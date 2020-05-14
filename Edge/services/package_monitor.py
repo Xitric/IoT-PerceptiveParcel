@@ -46,7 +46,7 @@ class PackageMonitor:
         self.messaging.notify()
 
     def _on_package_id(self, topic, package_id):
-        # TODO: Unsubscribe from old id - umqttsimple does not support this!
+        # We should unsubscribe from the old id, but umqttsimple does not support this!
         self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(package_id), self._on_temperature_setpoint, 1)
         self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT.format(package_id), self._on_humidity_setpoint, 1)
         self.mqtt.subscribe(TOPIC_MOTION_SETPOINT.format(package_id), self._on_motion_setpoint, 1)
@@ -70,11 +70,10 @@ class PackageMonitor:
                     did_transmit = True
 
             if did_transmit:
-                # TODO: Move to budget manager
                 print("Notified messaging service of pending data")
                 self.messaging.notify()
 
-            utime.sleep(10)  # Reduce energy footprint?
+            utime.sleep(10)
 
     def __run_motion(self, thread: Thread):
         while thread.active:
@@ -85,7 +84,6 @@ class PackageMonitor:
                     did_transmit = True
 
             if did_transmit:
-                # TODO: Move to budget manager
                 print("Notified messaging service of pending data")
                 self.messaging.notify()
 
@@ -112,7 +110,6 @@ class PackageMonitor:
         return False
 
     def __check_motion(self) -> bool:
-        # E.g. {'GyZ': -213, 'GyY': 203, 'GyX': -151, 'Tmp': 27.73, 'AcZ': 16312, 'AcY': 620, 'AcX': -1116}
         values = self.motion_sensor.get_values()
 
         z = values['AcZ']

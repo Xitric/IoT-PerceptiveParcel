@@ -3,7 +3,6 @@ from services import Ntp, Triangulation, Locator
 from drivers import SSD1306_I2C
 from machine import I2C, Pin
 
-# OLED, width (128) might be incorrect
 from services.package_monitor import PackageMonitor
 
 i2c = I2C(-1, Pin(26, Pin.IN), Pin(25, Pin.OUT))

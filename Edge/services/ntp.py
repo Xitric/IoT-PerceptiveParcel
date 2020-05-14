@@ -33,7 +33,7 @@ class Ntp:
             self.wifi.acquire()
             try:
                 if self.wifi.connect():
-                    utime.sleep(5)  # Sometimes it fails if we are too fast?
+                    utime.sleep(5)  # Sometimes it fails if we are too fast
                     self.__settime()
                     print("Updated clock with NTP")
                     self.oled.push_line("Updated clock")

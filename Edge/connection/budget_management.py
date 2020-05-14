@@ -97,7 +97,7 @@ class TransmissionModel:
         self.early_transmit_factor = early_transmit_factor
 
     def should_transmit(self, time: float, buffer: MessageBuffer, budget: Budget) -> bool:
-        # Never transmit an empty buffer, duh
+        # Never transmit an empty buffer
         if len(buffer.stack) == 0:
             return False
         
@@ -113,7 +113,6 @@ class TransmissionModel:
             return buffer.stack[0].delta > self.significant_delta * self.early_transmit_factor
 
 
-# A simulation using adaptive sampling and batch transmissions
 class BudgetManager:
     """Used to manage when a message is sent over a network connection."""
 

@@ -23,12 +23,11 @@ class Locator:
         self.messaging.notify()
 
     def _on_package_id(self, topic, package_id):
-        # TODO: Unsubscribe from old id - umqttsimple does not support this!
+        # We should unsubscribe from the old id, but umqttsimple does not support this!
         self.mqtt.subscribe(TOPIC_PING.format(package_id), self._on_ping, 1)
         self.messaging.notify()
 
     def _on_ping(self, topic, msg):
-        # Something...
         beeper = PWM(self.buzzer, freq=300, duty=512)
         self.ledAzure.on()
         self.ledWifi.on()
