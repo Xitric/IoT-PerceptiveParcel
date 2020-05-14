@@ -93,8 +93,6 @@ def __handle_mac_scan(package_id, stations_payload):
                                    longitude=coordinates[1],
                                    accuracy=coordinates[2])
 
-    # TODO: Publish as json to MQTT broker
-
 def __to_mac_address(string):
     mac = ''
     for i, ch in enumerate(string):

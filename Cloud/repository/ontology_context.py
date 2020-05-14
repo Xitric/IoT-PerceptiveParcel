@@ -1,15 +1,6 @@
 from rdflib import Literal
 from repository.wrapper import model, query, IOTPP, RDF, XSD
 
-# TODO: methods for querying and inserting into the ontology ttl file
-# TODO: host on local server?
-
-# Might contain:
-#   Devices and their ids
-#   Mapping of current package ids to devices
-#   Device types and the data they generate
-#       Where this data is published (the topics)
-#   Setpoint values for package types
 g = model()
 
 def _init():
@@ -139,12 +130,4 @@ def _query_package_types():
     '''
     return query(g,q_package_types)
 
-
-#Code for testing 
 _init()
-
-# print(get_all_deviceIds())
-# print(get_package_on_device('30aea4ddc98c'))
-# print(get_setpoints_on_packagetype('letter'))
-
-

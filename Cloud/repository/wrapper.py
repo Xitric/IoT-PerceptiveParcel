@@ -1,3 +1,6 @@
+# Code originally by Aslak Johansen
+# Adapted from
+#   https://github.com/aslakjohansen/sdu-iot-brick/blob/master/src/wrapping.py
 from rdflib import Graph, Namespace
 
 # Standard namespaces that we can refer to
