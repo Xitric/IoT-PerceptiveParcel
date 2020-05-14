@@ -3,7 +3,7 @@ import math
 from thread import Thread
 from drivers import MPU6050, HTS221
 from machine import Pin, I2C
-from connection import MessagingService, Wifi, MqttConnection, config
+from connection import MessagingService, Wifi, MqttConnection, BudgetManager, config
 import ubinascii
 import machine
 import utime
@@ -22,9 +22,10 @@ TOPIC_MOTION_PUBLISH = 'hcklI67o/package/{}/motion'
 
 class PackageMonitor:
 
-    def __init__(self, mqtt: MqttConnection, messaging: MessagingService):
+    def __init__(self, mqtt: MqttConnection, messaging: MessagingService, budget_manager: BudgetManager):
         self.mqtt = mqtt
         self.messaging = messaging
+        self.budget_manager = budget_manager
 
         self.environment_thread = Thread(self.__run_environment, "EnvironmentThread")
         self.motion_thread = Thread(self.__run_motion, "MotionThread")
@@ -45,7 +46,7 @@ class PackageMonitor:
         self.messaging.notify()
 
     def _on_package_id(self, topic, package_id):
-        # TODO: Unsubscribe from old id - umqttsimple does not support this!
+        # We should unsubscribe from the old id, but umqttsimple does not support this!
         self.mqtt.subscribe(TOPIC_TEMPERATURE_SETPOINT.format(package_id), self._on_temperature_setpoint, 1)
         self.mqtt.subscribe(TOPIC_HUMIDITY_SETPOINT.format(package_id), self._on_humidity_setpoint, 1)
         self.mqtt.subscribe(TOPIC_MOTION_SETPOINT.format(package_id), self._on_motion_setpoint, 1)
@@ -69,11 +70,10 @@ class PackageMonitor:
                     did_transmit = True
 
             if did_transmit:
-                # TODO: Move to budget manager
                 print("Notified messaging service of pending data")
                 self.messaging.notify()
 
-            utime.sleep(10)  # Reduce energy footprint?
+            utime.sleep(10)
 
     def __run_motion(self, thread: Thread):
         while thread.active:
@@ -84,7 +84,6 @@ class PackageMonitor:
                     did_transmit = True
 
             if did_transmit:
-                # TODO: Move to budget manager
                 print("Notified messaging service of pending data")
                 self.messaging.notify()
 
@@ -96,8 +95,7 @@ class PackageMonitor:
 
         if temperature > self.temperature_setpoint:
             time = utime.localtime()
-            temperature_time = ujson.dumps({"temperature": temperature, "time": time})
-            self.mqtt.publish(TOPIC_TEMPERATURE_PUBLISH.format(self.messaging.package_id), temperature_time, qos=1)
+            self.budget_manager.enqueue(TOPIC_TEMPERATURE_PUBLISH.format(self.messaging.package_id), time, temperature, self.temperature_setpoint)
             return True
         return False
 
@@ -107,13 +105,11 @@ class PackageMonitor:
 
         if humidity > self.humidity_setpoint:
             time = utime.localtime()
-            humidity_time = ujson.dumps({"humidity": humidity, "time": time})
-            self.mqtt.publish(TOPIC_HUMIDITY_PUBLISH.format(self.messaging.package_id), humidity_time, qos=1)
+            self.budget_manager.enqueue(TOPIC_HUMIDITY_PUBLISH.format(self.messaging.package_id), time, humidity, self.humidity_setpoint)
             return True
         return False
 
     def __check_motion(self) -> bool:
-        # E.g. {'GyZ': -213, 'GyY': 203, 'GyX': -151, 'Tmp': 27.73, 'AcZ': 16312, 'AcY': 620, 'AcX': -1116}
         values = self.motion_sensor.get_values()
 
         z = values['AcZ']
@@ -128,8 +124,7 @@ class PackageMonitor:
 
         if motion > self.motion_setpoint: #20000
             time = utime.time()
-            motion_time = ujson.dumps({"motion": motion, "time": time})
-            self.mqtt.publish(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), motion_time, qos=1)
+            self.budget_manager.enqueue(TOPIC_MOTION_PUBLISH.format(self.messaging.package_id), time, motion, self.motion_setpoint)
             return True
 
         return False

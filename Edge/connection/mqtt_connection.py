@@ -1,10 +1,11 @@
-from connection import Wifi, MQTTClient, MessagingService, config
+from connection import Wifi, MQTTClient, MessagingService, BudgetManager, config
 import ubinascii
 import machine
 import os
 from thread import Thread, ReentrantLock
 import utime
 import sys
+import ujson
 
 EHOSTUNREACH = 113
 BUFFER_FILE = 'mqtt-buffer.txt'
@@ -22,11 +23,12 @@ class MqttConnection(MQTTClient):
     in-memory.
     """
 
-    def __init__(self, broker: str, wifi: Wifi, messaging: MessagingService, oled):
+    def __init__(self, broker: str, wifi: Wifi, messaging: MessagingService, budget_manager: BudgetManager, oled):
         self.device_id = ubinascii.hexlify(machine.unique_id()).decode()
         super().__init__(self.device_id, broker)
         self.wifi = wifi
         self.messaging = messaging
+        self.budget_manager = budget_manager
         self.oled = oled
         self.thread = Thread(self.__receive_loop, "MqttThread")
 
@@ -43,10 +45,15 @@ class MqttConnection(MQTTClient):
         """
         Check if there are pending subscriptions or messages in the buffer.
         """
-        return len(self._pending_subscriptions) > 0 or BUFFER_FILE in os.listdir()
+        return len(self._pending_subscriptions) > 0 or \
+            BUFFER_FILE in os.listdir() or \
+            self.budget_manager.should_transmit()
 
     def transmit(self):
         self.sync_lock.acquire()
+        if self.budget_manager.should_transmit():
+            self.__spill_to_buffer()
+
         self.wifi.acquire()
         try:
             if self.wifi.connect():
@@ -57,6 +64,20 @@ class MqttConnection(MQTTClient):
             self.wifi.release()
             self.sync_lock.release()
     
+    def __spill_to_buffer(self):
+        """
+        Enqueue new messages to be transmitted next time network is available.
+        """
+        self.sync_lock.acquire()
+        try:
+            for message in self.budget_manager.get_transmission_package():
+                with open(BUFFER_FILE, 'a') as buffer:
+                    buffer.write('{};{};{}\n'.format(message.topic, False, 1))
+                    buffer.write('{}\n'.format(ujson.dumps({"value": message.value, "time": message.time})))
+                print("Buffered {}".format(message.value))
+        finally:
+            self.sync_lock.release()
+
     def __transmit_buffer(self):
         """
         Transmit all messages in the buffer file to the MQTT broker. If
@@ -248,8 +269,11 @@ class MqttConnection(MQTTClient):
                         self.__reconnect()
 
     def _on_package_id(self, topic, msg):
+        if self.messaging.package_id == msg:
+            return
+
         self.messaging.package_id = msg
-        config.set_value("package_id", msg)
+        # config.set_value("package_id", msg)  # Cannot run because of recursion depth
 
         print('Received package id {}'.format(msg))
         self.oled.push_line("ID: {}".format(msg))
